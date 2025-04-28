@@ -49,6 +49,14 @@ const BRICK_PADDING = 10;
 const BRICK_OFFSET_TOP = 50;
 const BRICK_OFFSET_LEFT = 30;
 
+// 特殊ブロックの設定
+const BRICK_TYPES = {
+    NORMAL: { color: '#0095DD', border: '#003366', hits: 1 },
+    EXPLOSIVE: { color: '#FF0000', border: '#990000', hits: 1 },
+    HARD: { color: '#888888', border: '#444444', hits: 3 },
+    MOVING: { color: '#00AA00', border: '#006600', hits: 1 }
+};
+
 // アイテムの設定
 const ITEM_RADIUS = 15;
 const ITEM_SPEED = 2;
@@ -90,6 +98,11 @@ let items = []; // アイテムの配列
 let gameRunning = false;
 let touchStartX = 0;
 let touchCurrentX = 0;
+
+// ゲームモード
+let gameMode = 'normal'; // 'normal' または 'timeAttack'
+let gameTime = 0;
+let gameTimer = null;
 
 // タッチイベントの処理
 function handleTouchStart(e) {
@@ -144,18 +157,46 @@ function initGame() {
     for (let i = 0; i < BRICK_ROWS; i++) {
         bricks[i] = [];
         for (let j = 0; j < BRICK_COLUMNS; j++) {
+            // 特殊ブロックをランダムに配置
+            let type = BRICK_TYPES.NORMAL;
+            const random = Math.random();
+            if (random < 0.1) type = BRICK_TYPES.EXPLOSIVE;
+            else if (random < 0.2) type = BRICK_TYPES.HARD;
+            else if (random < 0.3) type = BRICK_TYPES.MOVING;
+
             bricks[i][j] = {
                 x: j * (BRICK_WIDTH + BRICK_PADDING) + BRICK_OFFSET_LEFT,
                 y: i * (BRICK_HEIGHT + BRICK_PADDING) + BRICK_OFFSET_TOP,
                 width: BRICK_WIDTH,
                 height: BRICK_HEIGHT,
-                visible: true
+                visible: true,
+                type: type,
+                hits: type.hits,
+                direction: Math.random() < 0.5 ? 1 : -1 // 移動ブロックの方向
             };
         }
     }
 
     // アイテムの配列を初期化
     items = [];
+
+    // タイムアタックモードの場合、タイマーをリセット
+    if (gameMode === 'timeAttack') {
+        gameTime = 0;
+        if (gameTimer) clearInterval(gameTimer);
+        gameTimer = setInterval(() => {
+            gameTime++;
+            updateTimer();
+        }, 1000);
+    }
+}
+
+// タイマーの更新
+function updateTimer() {
+    const minutes = Math.floor(gameTime / 60);
+    const seconds = gameTime % 60;
+    document.getElementById('timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 // 新しいボールを追加する関数
@@ -176,14 +217,6 @@ function addTenBalls() {
         addBall();
     }
 }
-
-// スタートボタンのイベントリスナー
-startButton.addEventListener('click', () => {
-    startScreen.style.display = 'none';
-    initGame();
-    gameRunning = true;
-    draw();
-});
 
 // ゲームのメインループ
 function draw() {
@@ -211,14 +244,35 @@ function draw() {
         item.draw();
     });
 
-    // ブロックの描画
+    // ブロックの描画と更新
     for (let i = 0; i < BRICK_ROWS; i++) {
         for (let j = 0; j < BRICK_COLUMNS; j++) {
-            if (bricks[i][j].visible) {
-                ctx.fillStyle = '#0095DD';
-                ctx.fillRect(bricks[i][j].x, bricks[i][j].y, bricks[i][j].width, bricks[i][j].height);
-                ctx.strokeStyle = '#003366';
-                ctx.strokeRect(bricks[i][j].x, bricks[i][j].y, bricks[i][j].width, bricks[i][j].height);
+            const brick = bricks[i][j];
+            if (brick.visible) {
+                // 移動ブロックの更新
+                if (brick.type === BRICK_TYPES.MOVING) {
+                    brick.x += brick.direction;
+                    if (brick.x <= BRICK_OFFSET_LEFT || 
+                        brick.x + brick.width >= canvas.width - BRICK_OFFSET_LEFT) {
+                        brick.direction *= -1;
+                    }
+                }
+
+                // ブロックの描画
+                ctx.fillStyle = brick.type.color;
+                ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+                ctx.strokeStyle = brick.type.border;
+                ctx.strokeRect(brick.x, brick.y, brick.width, brick.height);
+
+                // 硬いブロックのヒット数を表示
+                if (brick.type === BRICK_TYPES.HARD) {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(brick.hits.toString(), 
+                        brick.x + brick.width / 2, 
+                        brick.y + brick.height / 2 + 7);
+                }
             }
         }
     }
@@ -263,17 +317,43 @@ function draw() {
                         ball.y + ball.radius > brick.y && 
                         ball.y - ball.radius < brick.y + brick.height) {
                         ball.dy = -ball.dy;
-                        brick.visible = false;
-                        brickBreakSound.currentTime = 0;
-                        brickBreakSound.play();
+                        
+                        // 硬いブロックの処理
+                        if (brick.type === BRICK_TYPES.HARD) {
+                            brick.hits--;
+                            if (brick.hits <= 0) {
+                                brick.visible = false;
+                                brickBreakSound.currentTime = 0;
+                                brickBreakSound.play();
+                            }
+                        } else {
+                            brick.visible = false;
+                            brickBreakSound.currentTime = 0;
+                            brickBreakSound.play();
 
-                        // アイテムをランダムに生成
-                        if (Math.random() < 0.3) { // 30%の確率でアイテムを生成
-                            const item = new Item(
-                                brick.x + brick.width / 2,
-                                brick.y + brick.height / 2
-                            );
-                            items.push(item);
+                            // 爆発ブロックの処理
+                            if (brick.type === BRICK_TYPES.EXPLOSIVE) {
+                                // 周囲のブロックを破壊
+                                for (let di = -1; di <= 1; di++) {
+                                    for (let dj = -1; dj <= 1; dj++) {
+                                        const ni = i + di;
+                                        const nj = j + dj;
+                                        if (ni >= 0 && ni < BRICK_ROWS && 
+                                            nj >= 0 && nj < BRICK_COLUMNS) {
+                                            bricks[ni][nj].visible = false;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // アイテムをランダムに生成
+                            if (Math.random() < 0.3) {
+                                const item = new Item(
+                                    brick.x + brick.width / 2,
+                                    brick.y + brick.height / 2
+                                );
+                                items.push(item);
+                            }
                         }
                     }
                 });
@@ -290,7 +370,7 @@ function draw() {
             item.x - item.radius < paddle.x + paddle.width) {
             // アイテムを取得
             if (item.type === 'extraBall') {
-                addTenBalls(); // 10個のボールを一度に追加
+                addTenBalls();
             }
             return false;
         }
@@ -307,6 +387,7 @@ function draw() {
 
     if (allBallsLost) {
         gameRunning = false;
+        if (gameTimer) clearInterval(gameTimer);
         gameOverSound.play();
         setTimeout(() => {
             alert('ゲームオーバー！');
@@ -324,13 +405,26 @@ function draw() {
     }
     if (bricksLeft === 0) {
         gameRunning = false;
+        if (gameTimer) clearInterval(gameTimer);
         gameClearSound.play();
         setTimeout(() => {
-            alert('おめでとう！ゲームクリア！');
+            if (gameMode === 'timeAttack') {
+                alert(`おめでとう！クリアタイム: ${Math.floor(gameTime / 60)}分${gameTime % 60}秒`);
+            } else {
+                alert('おめでとう！ゲームクリア！');
+            }
             startScreen.style.display = 'block';
         }, 500);
         return;
     }
 
     requestAnimationFrame(draw);
-} 
+}
+
+// スタートボタンのイベントリスナー
+startButton.addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    initGame();
+    gameRunning = true;
+    draw();
+}); 

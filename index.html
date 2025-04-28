@@ -90,13 +90,45 @@
                 font-size: 16px;
             }
         }
+        #timer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .mode-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .mode-button.active {
+            background-color: #1976D2;
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
+        <div id="timer">00:00</div>
         <div id="startScreen">
             <h1>ブロック崩しゲーム</h1>
+            <div class="mode-buttons">
+                <button class="mode-button active" onclick="setGameMode('normal')">ノーマルモード</button>
+                <button class="mode-button" onclick="setGameMode('timeAttack')">タイムアタック</button>
+            </div>
             <div class="instructions">
                 <p>画面を左右にスワイプしてパドルを操作します</p>
                 <p>すべてのブロックを壊してクリアを目指しましょう！</p>
@@ -111,5 +143,15 @@
         <audio id="gameClear" src="https://assets.mixkit.co/active_storage/sfx/2576/2576-preview.mp3"></audio>
     </div>
     <script src="game.js"></script>
+    <script>
+        // ゲームモードの設定
+        function setGameMode(mode) {
+            gameMode = mode;
+            document.querySelectorAll('.mode-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelector(`.mode-button[onclick="setGameMode('${mode}')"]`).classList.add('active');
+        }
+    </script>
 </body>
 </html> 
