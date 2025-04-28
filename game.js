@@ -104,6 +104,26 @@ let gameMode = 'normal'; // 'normal' または 'timeAttack'
 let gameTime = 0;
 let gameTimer = null;
 
+// ハイスコアの管理
+function saveHighScore(time) {
+    const highScores = JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
+    highScores.push(time);
+    highScores.sort((a, b) => a - b);
+    const top3 = highScores.slice(0, 3);
+    localStorage.setItem('blockBreakerHighScores', JSON.stringify(top3));
+    return top3;
+}
+
+function getHighScores() {
+    return JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 // タッチイベントの処理
 function handleTouchStart(e) {
     if (!gameRunning) return;
@@ -193,10 +213,19 @@ function initGame() {
 
 // タイマーの更新
 function updateTimer() {
-    const minutes = Math.floor(gameTime / 60);
-    const seconds = gameTime % 60;
-    document.getElementById('timer').textContent = 
-        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    document.getElementById('timer').textContent = formatTime(gameTime);
+}
+
+// ハイスコアの表示
+function showHighScores() {
+    const highScores = getHighScores();
+    const highScoresList = document.getElementById('highScoresList');
+    if (highScoresList) {
+        highScoresList.innerHTML = highScores.length > 0 
+            ? highScores.map((score, index) => 
+                `<div>${index + 1}位: ${formatTime(score)}</div>`).join('')
+            : '<div>記録なし</div>';
+    }
 }
 
 // 新しいボールを追加する関数
@@ -409,11 +438,16 @@ function draw() {
         gameClearSound.play();
         setTimeout(() => {
             if (gameMode === 'timeAttack') {
-                alert(`おめでとう！クリアタイム: ${Math.floor(gameTime / 60)}分${gameTime % 60}秒`);
+                const top3 = saveHighScore(gameTime);
+                const message = `おめでとう！クリアタイム: ${formatTime(gameTime)}\n\n` +
+                    `トップ3の記録:\n${top3.map((score, index) => 
+                        `${index + 1}位: ${formatTime(score)}`).join('\n')}`;
+                alert(message);
             } else {
                 alert('おめでとう！ゲームクリア！');
             }
             startScreen.style.display = 'block';
+            showHighScores();
         }, 500);
         return;
     }

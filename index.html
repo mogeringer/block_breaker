@@ -117,6 +117,24 @@
         .mode-button.active {
             background-color: #1976D2;
         }
+        #highScores {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
+        }
+        #highScores h2 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        #highScoresList {
+            font-size: 16px;
+            color: #666;
+        }
+        #highScoresList div {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -132,6 +150,10 @@
             <div class="instructions">
                 <p>画面を左右にスワイプしてパドルを操作します</p>
                 <p>すべてのブロックを壊してクリアを目指しましょう！</p>
+            </div>
+            <div id="highScores">
+                <h2>タイムアタック トップ3</h2>
+                <div id="highScoresList"></div>
             </div>
             <button id="startButton">ゲームスタート</button>
         </div>
@@ -152,6 +174,11 @@
             });
             document.querySelector(`.mode-button[onclick="setGameMode('${mode}')"]`).classList.add('active');
         }
+
+        // ページ読み込み時にハイスコアを表示
+        window.addEventListener('load', () => {
+            showHighScores();
+        });
     </script>
 </body>
 </html> 
