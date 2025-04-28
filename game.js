@@ -160,7 +160,6 @@ function initGame() {
 
 // 新しいボールを追加する関数
 function addBall() {
-    if (balls.length >= 10) return; // 最大10個まで
     const newBall = {
         x: paddle.x + paddle.width / 2,
         y: paddle.y - BALL_RADIUS,
@@ -169,6 +168,13 @@ function addBall() {
         dy: -4
     };
     balls.push(newBall);
+}
+
+// 10個のボールを一度に追加する関数
+function addTenBalls() {
+    for (let i = 0; i < 10; i++) {
+        addBall();
+    }
 }
 
 // スタートボタンのイベントリスナー
@@ -284,7 +290,7 @@ function draw() {
             item.x - item.radius < paddle.x + paddle.width) {
             // アイテムを取得
             if (item.type === 'extraBall') {
-                addBall();
+                addTenBalls(); // 10個のボールを一度に追加
             }
             return false;
         }
