@@ -234,6 +234,12 @@ function getHighScores() {
     return JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
 }
 
+// ハイスコアのリセット
+function resetHighScores() {
+    localStorage.removeItem('blockBreakerHighScores');
+    showHighScores(); // 表示を更新
+}
+
 function formatTime(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -437,7 +443,8 @@ function generateRandomItem(x, y) {
 // ゲームの初期化
 function initGame() {
     GameState.reset();
-    resizeCanvas(); // ゲーム開始時にキャンバスサイズを再設定
+    resetHighScores(); // ゲーム開始時にハイスコアをリセット
+    resizeCanvas();
     initGameObjects();
     startGameTimer();
     updateStageDisplay();
