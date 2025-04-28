@@ -60,17 +60,58 @@ const BRICK_TYPES = {
 // アイテムの設定
 const ITEM_RADIUS = 15;
 const ITEM_SPEED = 2;
-const ITEM_COLOR = '#FFD700'; // 金色
+
+// アイテムの種類
+const ITEM_TYPES = {
+    EXTRA_BALL: {
+        name: 'ボール増加',
+        color: '#FFD700',
+        border: '#B8860B',
+        effect: 'ボールが10個増える'
+    },
+    PADDLE_SIZE: {
+        name: 'パドル拡大',
+        color: '#FF69B4',
+        border: '#C71585',
+        effect: 'パドルが一時的に大きくなる'
+    },
+    BALL_SLOW: {
+        name: 'ボール減速',
+        color: '#87CEEB',
+        border: '#4682B4',
+        effect: 'ボールの速度が遅くなる'
+    },
+    BALL_PIERCE: {
+        name: '貫通弾',
+        color: '#FF4500',
+        border: '#8B0000',
+        effect: 'ボールがブロックを貫通する'
+    },
+    PADDLE_MAGNET: {
+        name: '磁石パドル',
+        color: '#32CD32',
+        border: '#006400',
+        effect: 'パドルがボールを引き寄せる'
+    },
+    BALL_SPLIT: {
+        name: 'ボール分裂',
+        color: '#9370DB',
+        border: '#4B0082',
+        effect: 'ボールが2つに分裂する'
+    }
+};
 
 // アイテムクラス
 class Item {
-    constructor(x, y) {
+    constructor(x, y, type) {
         this.x = x;
         this.y = y;
         this.radius = ITEM_RADIUS;
         this.speed = ITEM_SPEED;
-        this.type = 'extraBall'; // アイテムの種類
+        this.type = type;
         this.active = true;
+        this.name = ITEM_TYPES[type].name;
+        this.effect = ITEM_TYPES[type].effect;
     }
 
     update() {
@@ -84,9 +125,18 @@ class Item {
         if (!this.active) return;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = ITEM_COLOR;
+        ctx.fillStyle = ITEM_TYPES[this.type].color;
         ctx.fill();
+        ctx.strokeStyle = ITEM_TYPES[this.type].border;
+        ctx.lineWidth = 2;
+        ctx.stroke();
         ctx.closePath();
+
+        // アイテム名を表示
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.name, this.x, this.y + 4);
     }
 }
 
@@ -153,6 +203,34 @@ canvas.addEventListener('mousemove', (e) => {
     mouseX = (e.clientX - rect.left) * scale;
 });
 
+// パワーアップの効果
+let powerUps = {
+    paddleSize: false,
+    ballSlow: false,
+    ballPierce: false,
+    paddleMagnet: false,
+    ballSplit: false
+};
+
+// パワーアップの持続時間（秒）
+const POWERUP_DURATION = 10;
+let powerUpTimers = {};
+
+// パワーアップの効果を適用
+function applyPowerUp(type) {
+    powerUps[type] = true;
+    powerUpTimers[type] = POWERUP_DURATION;
+
+    // タイマーを設定
+    const timer = setInterval(() => {
+        powerUpTimers[type]--;
+        if (powerUpTimers[type] <= 0) {
+            powerUps[type] = false;
+            clearInterval(timer);
+        }
+    }, 1000);
+}
+
 // ゲームの初期化
 function initGame() {
     paddle = {
@@ -207,6 +285,16 @@ function initGame() {
         gameTime++;
         updateTimer();
     }, 1000);
+
+    // パワーアップの状態をリセット
+    powerUps = {
+        paddleSize: false,
+        ballSlow: false,
+        ballPierce: false,
+        paddleMagnet: false,
+        ballSplit: false
+    };
+    powerUpTimers = {};
 }
 
 // タイマーの更新
@@ -245,6 +333,13 @@ function addTenBalls() {
     }
 }
 
+// アイテムをランダムに生成
+function generateRandomItem(x, y) {
+    const types = Object.keys(ITEM_TYPES);
+    const type = types[Math.floor(Math.random() * types.length)];
+    return new Item(x, y, type);
+}
+
 // ゲームのメインループ
 function draw() {
     if (!gameRunning) return;
@@ -252,9 +347,10 @@ function draw() {
     // キャンバスのクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // パドルの描画
+    // パドルの描画（パワーアップ効果を適用）
+    const paddleWidth = powerUps.paddleSize ? PADDLE_WIDTH * 1.5 : PADDLE_WIDTH;
     ctx.fillStyle = '#333';
-    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+    ctx.fillRect(paddle.x - (paddleWidth - PADDLE_WIDTH) / 2, paddle.y, paddleWidth, paddle.height);
 
     // ボールの描画
     balls.forEach(ball => {
@@ -311,8 +407,21 @@ function draw() {
 
     // ボールの移動と衝突判定
     balls.forEach(ball => {
-        ball.x += ball.dx;
-        ball.y += ball.dy;
+        // ボールの速度を調整
+        const speedMultiplier = powerUps.ballSlow ? 0.7 : 1.0;
+        ball.x += ball.dx * speedMultiplier;
+        ball.y += ball.dy * speedMultiplier;
+
+        // 磁石パドルの効果
+        if (powerUps.paddleMagnet && ball.y > paddle.y - 100) {
+            const dx = (paddle.x + paddle.width / 2) - ball.x;
+            const dy = paddle.y - ball.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 200) {
+                ball.x += dx * 0.02;
+                ball.y += dy * 0.02;
+            }
+        }
 
         // 壁との衝突判定
         if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
@@ -343,8 +452,11 @@ function draw() {
                         ball.x - ball.radius < brick.x + brick.width &&
                         ball.y + ball.radius > brick.y && 
                         ball.y - ball.radius < brick.y + brick.height) {
-                        ball.dy = -ball.dy;
                         
+                        if (!powerUps.ballPierce) {
+                            ball.dy = -ball.dy;
+                        }
+
                         // 硬いブロックの処理
                         if (brick.type === BRICK_TYPES.HARD) {
                             brick.hits--;
@@ -375,7 +487,7 @@ function draw() {
 
                             // アイテムをランダムに生成
                             if (Math.random() < 0.3) {
-                                const item = new Item(
+                                const item = generateRandomItem(
                                     brick.x + brick.width / 2,
                                     brick.y + brick.height / 2
                                 );
@@ -395,9 +507,39 @@ function draw() {
             item.y - item.radius < paddle.y + paddle.height &&
             item.x + item.radius > paddle.x && 
             item.x - item.radius < paddle.x + paddle.width) {
-            // アイテムを取得
-            if (item.type === 'extraBall') {
-                addTenBalls();
+            
+            // アイテムの効果を適用
+            switch (item.type) {
+                case 'EXTRA_BALL':
+                    addTenBalls();
+                    break;
+                case 'PADDLE_SIZE':
+                    applyPowerUp('paddleSize');
+                    break;
+                case 'BALL_SLOW':
+                    applyPowerUp('ballSlow');
+                    break;
+                case 'BALL_PIERCE':
+                    applyPowerUp('ballPierce');
+                    break;
+                case 'PADDLE_MAGNET':
+                    applyPowerUp('paddleMagnet');
+                    break;
+                case 'BALL_SPLIT':
+                    applyPowerUp('ballSplit');
+                    // 全てのボールを分裂
+                    const currentBalls = [...balls];
+                    currentBalls.forEach(ball => {
+                        const newBall = {
+                            x: ball.x,
+                            y: ball.y,
+                            radius: ball.radius,
+                            dx: -ball.dx,
+                            dy: ball.dy
+                        };
+                        balls.push(newBall);
+                    });
+                    break;
             }
             return false;
         }
