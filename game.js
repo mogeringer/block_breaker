@@ -112,6 +112,7 @@ class Item {
         this.active = true;
         this.name = ITEM_TYPES[type].name;
         this.effect = ITEM_TYPES[type].effect;
+        this.color = ITEM_TYPES[type].color;
     }
 
     update() {
@@ -124,19 +125,40 @@ class Item {
     draw() {
         if (!this.active) return;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = ITEM_TYPES[this.type].color;
-        ctx.fill();
-        ctx.strokeStyle = ITEM_TYPES[this.type].border;
+        // 横長の四角形の描画
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - 25, this.y - 15, 50, 30);  // 幅を50に変更
+        ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.closePath();
-
-        // アイテム名を表示
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = '12px Arial';
+        ctx.strokeRect(this.x - 25, this.y - 15, 50, 30);
+        
+        // テキストの描画
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(this.name, this.x, this.y + 4);
+        ctx.textBaseline = 'middle';
+        
+        // アイテムの種類に応じて異なるテキストを表示
+        let displayText = '';
+        switch(this.type) {
+            case 'size':
+                displayText = 'WIDE';
+                break;
+            case 'speed':
+                displayText = 'FAST';
+                break;
+            case 'ball':
+                displayText = 'MORE';
+                break;
+        }
+        ctx.fillText(displayText, this.x, this.y);
+        
+        // アイテム名を表示
+        ctx.fillStyle = '#000';
+        ctx.font = '10px Arial';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(this.name, this.x, this.y - 20);
+        ctx.closePath();
     }
 }
 
