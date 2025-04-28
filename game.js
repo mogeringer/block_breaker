@@ -26,6 +26,12 @@ function resizeCanvas() {
     // キャンバスの表示サイズを設定
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
+    
+    // ゲームタイトルの位置を調整
+    if (startScreen) {
+        startScreen.style.width = width + 'px';
+        startScreen.style.height = height + 'px';
+    }
 }
 
 // 初期化時にキャンバスのサイズを設定
@@ -40,132 +46,142 @@ const gameClearSound = document.getElementById('gameClear');
 
 // ゲームの設定定数
 const GAME_CONFIG = {
-    CANVAS_WIDTH: 360,
-    CANVAS_HEIGHT: 640,
-    ASPECT_RATIO: 9 / 16,
-    PADDLE_WIDTH: 80,
-    PADDLE_HEIGHT: 15,
-    BALL_RADIUS: 8,
-    BRICK_ROWS: 12,
-    BRICK_COLUMNS: 8,
-    BRICK_WIDTH: 35,
-    BRICK_HEIGHT: 15,
-    BRICK_PADDING: 3,
-    BRICK_OFFSET_TOP: 40,
-    ITEM_RADIUS: 15,
-    ITEM_SPEED: 2,
-    POWERUP_DURATION: 10,
-    GAME_OVER_DELAY: 500
-};
-
-// 特殊ブロックの設定
-const BRICK_TYPES = {
-    NORMAL: { color: '#0095DD', border: '#003366', hits: 1 },
-    EXPLOSIVE: { color: '#FF0000', border: '#990000', hits: 1 },
-    HARD: { color: '#888888', border: '#444444', hits: 3 },
-    MOVING: { color: '#00AA00', border: '#006600', hits: 1 }
-};
-
-// アイテムの種類
-const ITEM_TYPES = {
-    EXTRA_BALL: {
-        name: 'ボール増加',
-        color: '#FFD700',
-        border: '#B8860B',
-        effect: 'ボールが10個増える'
+    // キャンバス設定
+    CANVAS: {
+        WIDTH: 360,
+        HEIGHT: 640,
+        ASPECT_RATIO: 9 / 16
     },
-    PADDLE_SIZE: {
-        name: 'パドル拡大',
-        color: '#FF69B4',
-        border: '#C71585',
-        effect: 'パドルが一時的に大きくなる'
+    
+    // パドル設定
+    PADDLE: {
+        DEFAULT_WIDTH: 80,
+        HEIGHT: 15,
+        SPEED: 8,
+        POWER_UP_MULTIPLIER: 1.5
     },
-    BALL_SLOW: {
-        name: 'ボール減速',
-        color: '#87CEEB',
-        border: '#4682B4',
-        effect: 'ボールの速度が遅くなる'
+    
+    // ボール設定
+    BALL: {
+        RADIUS: 8,
+        MIN_SPEED: 3,
+        POWER_UP_SLOW_MULTIPLIER: 0.7
     },
-    BALL_PIERCE: {
-        name: '貫通弾',
-        color: '#FF4500',
-        border: '#8B0000',
-        effect: 'ボールがブロックを貫通する'
-    },
-    BALL_SPLIT: {
-        name: 'ボール分裂',
-        color: '#9370DB',
-        border: '#4B0082',
-        effect: 'ボールが2つに分裂する'
-    }
-};
-
-// アイテムクラス
-class Item {
-    constructor(x, y, type) {
-        this.x = x;
-        this.y = y;
-        this.radius = GAME_CONFIG.ITEM_RADIUS;
-        this.speed = GAME_CONFIG.ITEM_SPEED;
-        this.type = type;
-        this.active = true;
-        this.name = ITEM_TYPES[type].name;
-        this.effect = ITEM_TYPES[type].effect;
-        this.color = ITEM_TYPES[type].color;
-    }
-
-    update() {
-        this.y += this.speed;
-        if (this.y > canvas.height) {
-            this.active = false;
+    
+    // ブロック設定
+    BRICK: {
+        ROWS: 12,
+        COLUMNS: 8,
+        WIDTH: 35,
+        HEIGHT: 15,
+        PADDING: 3,
+        OFFSET_TOP: 40,
+        TYPES: {
+            NORMAL: { 
+                name: '通常',
+                color: '#0095DD', 
+                border: '#003366', 
+                hits: 1 
+            },
+            EXPLOSIVE: { 
+                name: '爆発',
+                color: '#FF0000', 
+                border: '#990000', 
+                hits: 1 
+            },
+            HARD: { 
+                name: '硬い',
+                color: '#888888', 
+                border: '#444444', 
+                hits: 3 
+            },
+            MOVING: { 
+                name: '移動',
+                color: '#00AA00', 
+                border: '#006600', 
+                hits: 1 
+            }
         }
-    }
-
-    draw() {
-        if (!this.active) return;
-        ctx.beginPath();
-        // 横長の四角形の描画
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x - 25, this.y - 15, 50, 30);  // 幅を50に変更
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(this.x - 25, this.y - 15, 50, 30);
-        
-        // テキストの描画
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        // アイテムの種類に応じて異なるテキストを表示
-        let displayText = '';
-        switch(this.type) {
-            case 'PADDLE_SIZE':
-                displayText = 'WIDE';
-                break;
-            case 'BALL_SLOW':
-                displayText = 'SLOW';
-                break;
-            case 'EXTRA_BALL':
-                displayText = 'MORE';
-                break;
-            case 'BALL_PIERCE':
-                displayText = 'PIERCE';
-                break;
-            case 'BALL_SPLIT':
-                displayText = 'SPLIT';
-                break;
+    },
+    
+    // アイテム設定
+    ITEM: {
+        RADIUS: 15,
+        SPEED: 2,
+        TYPES: {
+            EXTRA_BALL: {
+                name: 'ボール増加',
+                color: '#FFD700',
+                border: '#B8860B',
+                effect: 'ボールが10個増える',
+                displayText: 'MORE'
+            },
+            PADDLE_SIZE: {
+                name: 'パドル拡大',
+                color: '#FF69B4',
+                border: '#C71585',
+                effect: 'パドルが大きくなる',
+                displayText: 'WIDE'
+            },
+            BALL_SLOW: {
+                name: 'ボール減速',
+                color: '#87CEEB',
+                border: '#4682B4',
+                effect: 'ボールの速度が遅くなる',
+                displayText: 'SLOW'
+            },
+            BALL_PIERCE: {
+                name: '貫通弾',
+                color: '#FF4500',
+                border: '#8B0000',
+                effect: 'ボールがブロックを貫通する',
+                displayText: 'PIERCE'
+            },
+            BALL_SPLIT: {
+                name: 'ボール分裂',
+                color: '#9370DB',
+                border: '#4B0082',
+                effect: 'ボールが2つに分裂する',
+                displayText: 'SPLIT'
+            }
         }
-        ctx.fillText(displayText, this.x, this.y);
-        
-        // アイテム名を表示
-        ctx.fillStyle = '#000';
-        ctx.font = '10px Arial';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(this.name, this.x, this.y - 20);
-        ctx.closePath();
-    }
-}
+    },
+    
+    // ゲーム設定
+    GAME: {
+        POWERUP_DURATION: 10,
+        GAME_OVER_DELAY: 500
+    },
+    
+    // ステージごとの設定
+    STAGES: [
+        { // ステージ1（簡単）
+            paddleWidth: 100,
+            ballSpeed: 4,
+            itemDropRate: 0.4
+        },
+        { // ステージ2
+            paddleWidth: 90,
+            ballSpeed: 5,
+            itemDropRate: 0.3
+        },
+        { // ステージ3
+            paddleWidth: 80,
+            ballSpeed: 6,
+            itemDropRate: 0.2
+        },
+        { // ステージ4
+            paddleWidth: 70,
+            ballSpeed: 7,
+            itemDropRate: 0.1
+        },
+        { // ステージ5
+            paddleWidth: 60,
+            ballSpeed: 8,
+            itemDropRate: 0.05
+        }
+    ]
+};
 
 // ゲームの状態管理
 const GameState = {
@@ -173,17 +189,18 @@ const GameState = {
     mode: 'normal',
     time: 0,
     timer: null,
+    stage: 1,
     powerUps: {
         paddleSize: false,
         ballSlow: false,
         ballPierce: false,
         ballSplit: false
     },
-    powerUpTimers: {},
     reset() {
         this.running = false;
         this.mode = 'normal';
         this.time = 0;
+        this.stage = 1;
         if (this.timer) clearInterval(this.timer);
         this.timer = null;
         this.powerUps = {
@@ -192,15 +209,14 @@ const GameState = {
             ballPierce: false,
             ballSplit: false
         };
-        this.powerUpTimers = {};
     }
 };
 
 // ゲームオブジェクト
 let paddle;
-let balls = []; // ボールの配列
+let balls = [];
 let bricks;
-let items = []; // アイテムの配列
+let items = [];
 let touchStartX = 0;
 let touchCurrentX = 0;
 
@@ -255,24 +271,7 @@ canvas.addEventListener('mousemove', (e) => {
 
 // パワーアップの効果を適用
 function applyPowerUp(type) {
-    // 既存のタイマーをクリア
-    if (GameState.powerUpTimers[type]) {
-        clearInterval(GameState.powerUpTimers[type].timer);
-        delete GameState.powerUpTimers[type];
-    }
-
     GameState.powerUps[type] = true;
-    GameState.powerUpTimers[type] = {
-        duration: GAME_CONFIG.POWERUP_DURATION,
-        timer: setInterval(() => {
-            GameState.powerUpTimers[type].duration--;
-            if (GameState.powerUpTimers[type].duration <= 0) {
-                GameState.powerUps[type] = false;
-                clearInterval(GameState.powerUpTimers[type].timer);
-                delete GameState.powerUpTimers[type];
-            }
-        }, 1000)
-    };
 
     // ボール分裂の処理
     if (type === 'ballSplit' && GameState.running) {
@@ -281,8 +280,8 @@ function applyPowerUp(type) {
             const newBall = {
                 x: ball.x,
                 y: ball.y,
-                radius: GAME_CONFIG.BALL_RADIUS,
-                dx: -ball.dx,
+                radius: GAME_CONFIG.BALL.RADIUS,
+                dx: -ball.dx, // 反対方向に進むように設定
                 dy: ball.dy
             };
             balls.push(newBall);
@@ -290,36 +289,79 @@ function applyPowerUp(type) {
     }
 }
 
+// ステージの進行
+function advanceStage() {
+    if (GameState.stage < GAME_CONFIG.STAGES.length) {
+        GameState.stage++;
+        // パワーアップ効果をリセット
+        GameState.powerUps = {
+            paddleSize: false,
+            ballSlow: false,
+            ballPierce: false, // 追加
+            ballSplit: false
+        };
+        updateStageDisplay();
+        initGameObjects();
+    }
+}
+
+// ステージ表示の更新
+function updateStageDisplay() {
+    const stageDisplay = document.getElementById('stageDisplay');
+    if (stageDisplay) {
+        stageDisplay.textContent = `ステージ ${GameState.stage}`;
+    }
+}
+
 // ゲームオブジェクトの初期化
 function initGameObjects() {
+    const currentStage = GAME_CONFIG.STAGES[GameState.stage - 1];
+    
+    // パドルの初期化
     paddle = {
-        x: canvas.width / 2 - GAME_CONFIG.PADDLE_WIDTH / 2,
-        y: canvas.height - GAME_CONFIG.PADDLE_HEIGHT - 10,
-        width: GAME_CONFIG.PADDLE_WIDTH,
-        height: GAME_CONFIG.PADDLE_HEIGHT,
-        dx: 8
+        x: canvas.width / 2 - currentStage.paddleWidth / 2,
+        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - 10,
+        width: currentStage.paddleWidth,
+        height: GAME_CONFIG.PADDLE.HEIGHT,
+        dx: GAME_CONFIG.PADDLE.SPEED
     };
-
+    
+    // ボールの初期化
     balls = [{
         x: canvas.width / 2,
-        y: canvas.height - GAME_CONFIG.PADDLE_HEIGHT - GAME_CONFIG.BALL_RADIUS - 10,
-        radius: GAME_CONFIG.BALL_RADIUS,
-        dx: 4,
-        dy: -4
+        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - GAME_CONFIG.BALL.RADIUS - 10,
+        radius: GAME_CONFIG.BALL.RADIUS,
+        dx: currentStage.ballSpeed,
+        dy: -currentStage.ballSpeed
     }];
-
+    
+    // ブロックの初期化
     initBricks();
+    
+    // アイテムの初期化
     items = [];
 }
 
 // ブロックの初期化
 function initBricks() {
     bricks = [];
-    for (let i = 0; i < GAME_CONFIG.BRICK_ROWS; i++) {
+    const { ROWS, COLUMNS, WIDTH, HEIGHT, PADDING, OFFSET_TOP } = GAME_CONFIG.BRICK;
+    const offsetLeft = (canvas.width - (COLUMNS * (WIDTH + PADDING) - PADDING)) / 2;
+    
+    for (let i = 0; i < ROWS; i++) {
         bricks[i] = [];
-        for (let j = 0; j < GAME_CONFIG.BRICK_COLUMNS; j++) {
+        for (let j = 0; j < COLUMNS; j++) {
             const type = getRandomBrickType();
-            bricks[i][j] = createBrick(i, j, type);
+            bricks[i][j] = {
+                x: j * (WIDTH + PADDING) + offsetLeft,
+                y: i * (HEIGHT + PADDING) + OFFSET_TOP,
+                width: WIDTH,
+                height: HEIGHT,
+                visible: true,
+                type: type,
+                hits: type.hits,
+                direction: Math.random() < 0.5 ? 1 : -1
+            };
         }
     }
 }
@@ -327,33 +369,79 @@ function initBricks() {
 // ランダムなブロックタイプを取得
 function getRandomBrickType() {
     const random = Math.random();
-    if (random < 0.1) return BRICK_TYPES.EXPLOSIVE;
-    if (random < 0.2) return BRICK_TYPES.HARD;
-    if (random < 0.3) return BRICK_TYPES.MOVING;
-    return BRICK_TYPES.NORMAL;
+    if (random < 0.1) return GAME_CONFIG.BRICK.TYPES.EXPLOSIVE;
+    if (random < 0.2) return GAME_CONFIG.BRICK.TYPES.HARD;
+    if (random < 0.3) return GAME_CONFIG.BRICK.TYPES.MOVING;
+    return GAME_CONFIG.BRICK.TYPES.NORMAL;
 }
 
-// ブロックオブジェクトの作成
-function createBrick(row, col, type) {
-    return {
-        x: col * (GAME_CONFIG.BRICK_WIDTH + GAME_CONFIG.BRICK_PADDING) + 
-           (canvas.width - (GAME_CONFIG.BRICK_COLUMNS * (GAME_CONFIG.BRICK_WIDTH + GAME_CONFIG.BRICK_PADDING) - GAME_CONFIG.BRICK_PADDING)) / 2,
-        y: row * (GAME_CONFIG.BRICK_HEIGHT + GAME_CONFIG.BRICK_PADDING) + GAME_CONFIG.BRICK_OFFSET_TOP,
-        width: GAME_CONFIG.BRICK_WIDTH,
-        height: GAME_CONFIG.BRICK_HEIGHT,
-        visible: true,
-        type: type,
-        hits: type.hits,
-        direction: Math.random() < 0.5 ? 1 : -1
-    };
+// アイテムクラス
+class Item {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.radius = GAME_CONFIG.ITEM.RADIUS;
+        this.speed = GAME_CONFIG.ITEM.SPEED;
+        this.type = type;
+        this.active = true;
+        this.name = GAME_CONFIG.ITEM.TYPES[type].name;
+        this.effect = GAME_CONFIG.ITEM.TYPES[type].effect;
+        this.color = GAME_CONFIG.ITEM.TYPES[type].color;
+    }
+
+    update() {
+        this.y += this.speed;
+        if (this.y > canvas.height) {
+            this.active = false;
+        }
+    }
+
+    draw() {
+        if (!this.active) return;
+        
+        ctx.beginPath();
+        // 横長の四角形の描画
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - 25, this.y - 15, 50, 30);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.x - 25, this.y - 15, 50, 30);
+        
+        // テキストの描画
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(GAME_CONFIG.ITEM.TYPES[this.type].displayText, this.x, this.y);
+        
+        // アイテム名を表示
+        ctx.fillStyle = '#000';
+        ctx.font = '10px Arial';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(this.name, this.x, this.y - 20);
+        ctx.closePath();
+    }
+}
+
+// アイテムをランダムに生成
+function generateRandomItem(x, y) {
+    const currentStage = GAME_CONFIG.STAGES[GameState.stage - 1];
+    if (Math.random() < currentStage.itemDropRate) { // 条件チェックを追加
+        const types = Object.keys(GAME_CONFIG.ITEM.TYPES);
+        const type = types[Math.floor(Math.random() * types.length)];
+        return new Item(x, y, type);
+    }
+    return null;
 }
 
 // ゲームの初期化
 function initGame() {
     GameState.reset();
+    resizeCanvas(); // ゲーム開始時にキャンバスサイズを再設定
     initGameObjects();
     startGameTimer();
-    GameState.running = true; // ゲーム状態を先に設定
+    updateStageDisplay();
+    GameState.running = true;
 }
 
 // ゲームタイマーの開始
@@ -372,7 +460,7 @@ function handleGameOver() {
     setTimeout(() => {
         alert('ゲームオーバー！');
         showStartScreen();
-    }, GAME_CONFIG.GAME_OVER_DELAY);
+    }, GAME_CONFIG.GAME.GAME_OVER_DELAY);
 }
 
 // ゲームクリア処理
@@ -381,19 +469,28 @@ function handleGameClear() {
     if (GameState.timer) clearInterval(GameState.timer);
     gameClearSound.play();
     setTimeout(() => {
-        const top3 = saveHighScore(GameState.time);
-        const message = `おめでとう！クリアタイム: ${formatTime(GameState.time)}\n\n` +
-            `トップ3の記録:\n${top3.map((score, index) => 
-                `${index + 1}位: ${formatTime(score)}`).join('\n')}`;
-        alert(message);
-        showStartScreen();
-    }, GAME_CONFIG.GAME_OVER_DELAY);
+        if (GameState.stage < GAME_CONFIG.STAGES.length) {
+            advanceStage();
+            // ゲームオブジェクトの初期化を待ってからrunningをtrueに設定
+            setTimeout(() => {
+                GameState.running = true;
+                draw();
+            }, 0);
+        } else {
+            const top3 = saveHighScore(GameState.time);
+            const message = `おめでとう！全ステージクリア！\nクリアタイム: ${formatTime(GameState.time)}\n\n` +
+                `トップ3の記録:\n${top3.map((score, index) => 
+                    `${index + 1}位: ${formatTime(score)}`).join('\n')}`;
+            alert(message);
+            showStartScreen();
+        }
+    }, GAME_CONFIG.GAME.GAME_OVER_DELAY);
 }
 
 // スタート画面の表示
 function showStartScreen() {
     startScreen.style.display = 'block';
-    resizeCanvas();
+    resizeCanvas(); // スタート画面表示時にキャンバスサイズを再設定
     showHighScores();
 }
 
@@ -418,8 +515,8 @@ function showHighScores() {
 function addBall() {
     const newBall = {
         x: paddle.x + paddle.width / 2,
-        y: paddle.y - GAME_CONFIG.BALL_RADIUS,
-        radius: GAME_CONFIG.BALL_RADIUS,
+        y: paddle.y - GAME_CONFIG.BALL.RADIUS,
+        radius: GAME_CONFIG.BALL.RADIUS,
         dx: (Math.random() - 0.5) * 8, // ランダムな方向
         dy: -4
     };
@@ -441,11 +538,33 @@ function addTenBalls() {
     }
 }
 
-// アイテムをランダムに生成
-function generateRandomItem(x, y) {
-    const types = Object.keys(ITEM_TYPES);
-    const type = types[Math.floor(Math.random() * types.length)];
-    return new Item(x, y, type);
+// 衝突判定のユーティリティ関数
+function checkCollision(ball, object) {
+    return ball.x + ball.radius > object.x &&
+           ball.x - ball.radius < object.x + object.width &&
+           ball.y + ball.radius > object.y &&
+           ball.y - ball.radius < object.y + object.height;
+}
+
+// ブロックの描画
+function drawBrick(brick) {
+    if (!brick.visible) return;
+
+    // ブロックの描画
+    ctx.fillStyle = brick.type.color;
+    ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+    ctx.strokeStyle = brick.type.border;
+    ctx.strokeRect(brick.x, brick.y, brick.width, brick.height);
+
+    // 硬いブロックのヒット数を表示
+    if (brick.type === GAME_CONFIG.BRICK.TYPES.HARD) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(brick.hits.toString(), 
+            brick.x + brick.width / 2, 
+            brick.y + brick.height / 2 + 7);
+    }
 }
 
 // ゲームのメインループ
@@ -456,9 +575,9 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // パドルの描画（パワーアップ効果を適用）
-    const paddleWidth = GameState.powerUps.paddleSize ? GAME_CONFIG.PADDLE_WIDTH * 1.5 : GAME_CONFIG.PADDLE_WIDTH;
+    const paddleWidth = GameState.powerUps.paddleSize ? paddle.width * GAME_CONFIG.PADDLE.POWER_UP_MULTIPLIER : paddle.width;
     ctx.fillStyle = '#333';
-    ctx.fillRect(paddle.x - (paddleWidth - GAME_CONFIG.PADDLE_WIDTH) / 2, paddle.y, paddleWidth, paddle.height);
+    ctx.fillRect(paddle.x - (paddleWidth - paddle.width) / 2, paddle.y, paddleWidth, paddle.height);
 
     // ボールの描画
     balls.forEach(ball => {
@@ -476,47 +595,70 @@ function draw() {
     });
 
     // ブロックの描画と更新
-    for (let i = 0; i < GAME_CONFIG.BRICK_ROWS; i++) {
-        for (let j = 0; j < GAME_CONFIG.BRICK_COLUMNS; j++) {
+    for (let i = 0; i < GAME_CONFIG.BRICK.ROWS; i++) {
+        for (let j = 0; j < GAME_CONFIG.BRICK.COLUMNS; j++) {
             const brick = bricks[i][j];
             if (brick.visible) {
                 // 移動ブロックの更新
-                if (brick.type === BRICK_TYPES.MOVING) {
-                    brick.x += brick.direction;
-                    if (brick.x <= (canvas.width - (GAME_CONFIG.BRICK_COLUMNS * (GAME_CONFIG.BRICK_WIDTH + GAME_CONFIG.BRICK_PADDING) - GAME_CONFIG.BRICK_PADDING)) / 2 || 
-                        brick.x + brick.width >= canvas.width - (canvas.width - (GAME_CONFIG.BRICK_COLUMNS * (GAME_CONFIG.BRICK_WIDTH + GAME_CONFIG.BRICK_PADDING) - GAME_CONFIG.BRICK_PADDING)) / 2) {
-                        brick.direction *= -1;
-                    }
+                if (brick.type === GAME_CONFIG.BRICK.TYPES.MOVING) {
+                    updateMovingBrick(brick);
                 }
-
-                // ブロックの描画
-                ctx.fillStyle = brick.type.color;
-                ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
-                ctx.strokeStyle = brick.type.border;
-                ctx.strokeRect(brick.x, brick.y, brick.width, brick.height);
-
-                // 硬いブロックのヒット数を表示
-                if (brick.type === BRICK_TYPES.HARD) {
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.font = '20px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(brick.hits.toString(), 
-                        brick.x + brick.width / 2, 
-                        brick.y + brick.height / 2 + 7);
-                }
+                drawBrick(brick);
             }
         }
     }
 
     // パドルの移動
+    updatePaddlePosition();
+
+    // ボールの移動と衝突判定
+    updateBalls();
+
+    // ブロックとの衝突判定
+    checkBrickCollisions();
+
+    // アイテムとの衝突判定
+    checkItemCollisions();
+
+    // ゲームオーバー判定
+    if (balls.every(ball => ball.y + ball.radius > canvas.height)) {
+        handleGameOver();
+        return;
+    }
+
+    // ゲームクリア判定
+    if (isGameClear()) {
+        handleGameClear();
+        return;
+    }
+
+    requestAnimationFrame(draw);
+}
+
+// 移動ブロックの更新
+function updateMovingBrick(brick) {
+    const { WIDTH, PADDING, COLUMNS } = GAME_CONFIG.BRICK;
+    const minX = (canvas.width - (COLUMNS * (WIDTH + PADDING) - PADDING)) / 2;
+    const maxX = canvas.width - minX - WIDTH;
+
+    brick.x += brick.direction;
+    if (brick.x <= minX || brick.x >= maxX) {
+        brick.direction *= -1;
+    }
+}
+
+// パドルの位置更新
+function updatePaddlePosition() {
     paddle.x = mouseX - paddle.width / 2;
     if (paddle.x < 0) paddle.x = 0;
     if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+}
 
-    // ボールの移動と衝突判定
+// ボールの更新
+function updateBalls() {
     balls.forEach(ball => {
         // ボールの速度を調整
-        const speedMultiplier = GameState.powerUps.ballSlow ? 0.7 : 1.0;
+        const speedMultiplier = GameState.powerUps.ballSlow ? GAME_CONFIG.BALL.POWER_UP_SLOW_MULTIPLIER : 1.0;
         ball.x += ball.dx * speedMultiplier;
         ball.y += ball.dy * speedMultiplier;
 
@@ -529,137 +671,121 @@ function draw() {
         }
 
         // パドルとの衝突判定
-        if (ball.y + ball.radius > paddle.y && 
-            ball.y - ball.radius < paddle.y + paddle.height &&
-            ball.x + ball.radius > paddle.x && 
-            ball.x - ball.radius < paddle.x + paddle.width) {
+        if (checkCollision(ball, paddle)) {
             ball.dy = -ball.dy;
             paddleHitSound.currentTime = 0;
             paddleHitSound.play();
         }
     });
+}
 
-    // ブロックとの衝突判定
-    for (let i = 0; i < GAME_CONFIG.BRICK_ROWS; i++) {
-        for (let j = 0; j < GAME_CONFIG.BRICK_COLUMNS; j++) {
+// ブロックとの衝突判定
+function checkBrickCollisions() {
+    for (let i = 0; i < GAME_CONFIG.BRICK.ROWS; i++) {
+        for (let j = 0; j < GAME_CONFIG.BRICK.COLUMNS; j++) {
             const brick = bricks[i][j];
             if (brick.visible) {
                 balls.forEach(ball => {
-                    if (ball.x + ball.radius > brick.x && 
-                        ball.x - ball.radius < brick.x + brick.width &&
-                        ball.y + ball.radius > brick.y && 
-                        ball.y - ball.radius < brick.y + brick.height) {
-                        
-                        if (!GameState.powerUps.ballPierce) {
-                            ball.dy = -ball.dy;
-                        }
-
-                        // 硬いブロックの処理
-                        if (brick.type === BRICK_TYPES.HARD) {
-                            brick.hits--;
-                            if (brick.hits <= 0) {
-                                brick.visible = false;
-                                brickBreakSound.currentTime = 0;
-                                brickBreakSound.play();
-                            }
-                        } else {
-                            brick.visible = false;
-                            brickBreakSound.currentTime = 0;
-                            brickBreakSound.play();
-
-                            // 爆発ブロックの処理
-                            if (brick.type === BRICK_TYPES.EXPLOSIVE) {
-                                // 周囲のブロックを破壊
-                                for (let di = -1; di <= 1; di++) {
-                                    for (let dj = -1; dj <= 1; dj++) {
-                                        const ni = i + di;
-                                        const nj = j + dj;
-                                        if (ni >= 0 && ni < GAME_CONFIG.BRICK_ROWS && 
-                                            nj >= 0 && nj < GAME_CONFIG.BRICK_COLUMNS) {
-                                            bricks[ni][nj].visible = false;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // アイテムをランダムに生成（確率を10%に調整）
-                            if (Math.random() < 0.1) {
-                                const item = generateRandomItem(
-                                    brick.x + brick.width / 2,
-                                    brick.y + brick.height / 2
-                                );
-                                items.push(item);
-                            }
-                        }
+                    if (checkCollision(ball, brick)) {
+                        handleBrickCollision(ball, brick, i, j);
                     }
                 });
             }
         }
     }
+}
 
-    // アイテムとパドルの衝突判定
-    items = items.filter(item => {
-        if (item.active && 
-            item.y + item.radius > paddle.y && 
-            item.y - item.radius < paddle.y + paddle.height &&
-            item.x + item.radius > paddle.x && 
-            item.x - item.radius < paddle.x + paddle.width) {
-            
-            // アイテムの効果を適用
-            switch (item.type) {
-                case 'EXTRA_BALL':
-                    addTenBalls();
-                    break;
-                case 'PADDLE_SIZE':
-                    applyPowerUp('paddleSize');
-                    break;
-                case 'BALL_SLOW':
-                    applyPowerUp('ballSlow');
-                    break;
-                case 'BALL_PIERCE':
-                    applyPowerUp('ballPierce');
-                    break;
-                case 'BALL_SPLIT':
-                    applyPowerUp('ballSplit');
-                    // 全てのボールを分裂
-                    const currentBalls = [...balls];
-                    currentBalls.forEach(ball => {
-                        const newBall = {
-                            x: ball.x,
-                            y: ball.y,
-                            radius: ball.radius,
-                            dx: -ball.dx,
-                            dy: ball.dy
-                        };
-                        balls.push(newBall);
-                    });
-                    break;
+// ブロック衝突時の処理
+function handleBrickCollision(ball, brick, row, col) {
+    if (!GameState.powerUps.ballPierce) {
+        ball.dy = -ball.dy;
+    }
+
+    if (brick.type === GAME_CONFIG.BRICK.TYPES.HARD) {
+        brick.hits--;
+        if (brick.hits <= 0) {
+            destroyBrick(brick, row, col);
+        }
+    } else {
+        destroyBrick(brick, row, col);
+    }
+}
+
+// ブロックの破壊処理
+function destroyBrick(brick, row, col) {
+    brick.visible = false;
+    brickBreakSound.currentTime = 0;
+    brickBreakSound.play();
+
+    // 爆発ブロックの処理
+    if (brick.type === GAME_CONFIG.BRICK.TYPES.EXPLOSIVE) {
+        handleExplosiveBrick(row, col);
+    }
+
+    // アイテムの生成
+    if (Math.random() < 0.1) {
+        const item = generateRandomItem(
+            brick.x + brick.width / 2,
+            brick.y + brick.height / 2
+        );
+        if (item) items.push(item);
+    }
+}
+
+// 爆発ブロックの処理
+function handleExplosiveBrick(row, col) {
+    for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+            const ni = row + di;
+            const nj = col + dj;
+            if (ni >= 0 && ni < GAME_CONFIG.BRICK.ROWS && 
+                nj >= 0 && nj < GAME_CONFIG.BRICK.COLUMNS) {
+                bricks[ni][nj].visible = false;
             }
+        }
+    }
+}
+
+// アイテムとの衝突判定
+function checkItemCollisions() {
+    items = items.filter(item => {
+        if (item.active && checkCollision(item, paddle)) {
+            applyItemEffect(item);
             return false;
         }
         return true;
     });
+}
 
-    // ゲームオーバー判定の最適化
-    let activeBalls = balls.filter(ball => ball.y + ball.radius <= canvas.height);
-    if (activeBalls.length === 0) {
-        handleGameOver();
-        return;
+// アイテム効果の適用
+function applyItemEffect(item) {
+    switch (item.type) {
+        case 'EXTRA_BALL':
+            addTenBalls();
+            break;
+        case 'PADDLE_SIZE':
+            applyPowerUp('paddleSize');
+            break;
+        case 'BALL_SLOW':
+            applyPowerUp('ballSlow');
+            break;
+        case 'BALL_PIERCE':
+            applyPowerUp('ballPierce');
+            break;
+        case 'BALL_SPLIT':
+            applyPowerUp('ballSplit');
+            break;
     }
+}
 
-    // ゲームクリア判定
-    let bricksLeft = 0;
-    for (let i = 0; i < GAME_CONFIG.BRICK_ROWS; i++) {
-        for (let j = 0; j < GAME_CONFIG.BRICK_COLUMNS; j++) {
-            if (bricks[i][j].visible) bricksLeft++;
+// ゲームクリア判定
+function isGameClear() {
+    for (let i = 0; i < GAME_CONFIG.BRICK.ROWS; i++) {
+        for (let j = 0; j < GAME_CONFIG.BRICK.COLUMNS; j++) {
+            if (bricks[i][j].visible) return false;
         }
     }
-    if (bricksLeft === 0) {
-        handleGameClear();
-        return;
-    }
-
-    requestAnimationFrame(draw);
+    return true;
 }
 
 // スタートボタンのイベントリスナー

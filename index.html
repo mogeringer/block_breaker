@@ -121,12 +121,23 @@
         #highScoresList div {
             margin: 5px 0;
         }
+        #stageDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         <div id="timer">00:00</div>
+        <div id="stageDisplay">ステージ 1</div>
         <div id="startScreen">
             <h1>ブロック崩しゲーム</h1>
             <div class="instructions">
