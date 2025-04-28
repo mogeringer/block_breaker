@@ -2,6 +2,34 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
+const gameContainer = document.getElementById('gameContainer');
+
+// キャンバスのサイズを設定
+function resizeCanvas() {
+    const containerWidth = gameContainer.clientWidth;
+    const containerHeight = gameContainer.clientHeight;
+    
+    // アスペクト比を維持
+    const aspectRatio = 800 / 600;
+    let width = containerWidth;
+    let height = width / aspectRatio;
+    
+    if (height > containerHeight) {
+        height = containerHeight;
+        width = height * aspectRatio;
+    }
+    
+    canvas.width = 800;
+    canvas.height = 600;
+    
+    // キャンバスの表示サイズを設定
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+}
+
+// 初期化時にキャンバスのサイズを設定
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
 // 音声要素の取得
 const paddleHitSound = document.getElementById('paddleHit');
@@ -26,6 +54,37 @@ let paddle;
 let ball;
 let bricks;
 let gameRunning = false;
+let touchStartX = 0;
+let touchCurrentX = 0;
+
+// タッチイベントの処理
+function handleTouchStart(e) {
+    if (!gameRunning) return;
+    touchStartX = e.touches[0].clientX;
+    e.preventDefault();
+}
+
+function handleTouchMove(e) {
+    if (!gameRunning) return;
+    touchCurrentX = e.touches[0].clientX;
+    const touchDelta = touchCurrentX - touchStartX;
+    const scale = canvas.width / canvas.clientWidth;
+    mouseX = (touchCurrentX - canvas.getBoundingClientRect().left) * scale;
+    e.preventDefault();
+}
+
+// タッチイベントのリスナーを追加
+canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+// マウスの動きを追跡
+let mouseX = 0;
+canvas.addEventListener('mousemove', (e) => {
+    if (!gameRunning) return;
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / canvas.clientWidth;
+    mouseX = (e.clientX - rect.left) * scale;
+});
 
 // ゲームの初期化
 function initGame() {
@@ -60,14 +119,6 @@ function initGame() {
         }
     }
 }
-
-// マウスの動きを追跡
-let mouseX = 0;
-canvas.addEventListener('mousemove', (e) => {
-    if (!gameRunning) return;
-    const rect = canvas.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-});
 
 // スタートボタンのイベントリスナー
 startButton.addEventListener('click', () => {
