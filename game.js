@@ -9,8 +9,8 @@ function resizeCanvas() {
     const containerWidth = gameContainer.clientWidth;
     const containerHeight = gameContainer.clientHeight;
     
-    // アスペクト比を維持
-    const aspectRatio = 800 / 600;
+    // スマホ向けに縦長のアスペクト比を設定
+    const aspectRatio = 9 / 16;  // 縦長の比率に変更
     let width = containerWidth;
     let height = width / aspectRatio;
     
@@ -19,8 +19,9 @@ function resizeCanvas() {
         width = height * aspectRatio;
     }
     
-    canvas.width = 800;
-    canvas.height = 600;
+    // キャンバスのサイズを設定
+    canvas.width = 360;  // 幅を360に設定
+    canvas.height = 640;  // 高さを640に設定
     
     // キャンバスの表示サイズを設定
     canvas.style.width = width + 'px';
@@ -38,16 +39,16 @@ const gameOverSound = document.getElementById('gameOver');
 const gameClearSound = document.getElementById('gameClear');
 
 // ゲームの設定
-const PADDLE_WIDTH = 100;
-const PADDLE_HEIGHT = 20;
-const BALL_RADIUS = 10;
-const BRICK_ROWS = 8;
-const BRICK_COLUMNS = 12;
-const BRICK_WIDTH = 60;
-const BRICK_HEIGHT = 20;
-const BRICK_PADDING = 5;
-const BRICK_OFFSET_TOP = 30;
-const BRICK_OFFSET_LEFT = 20;
+const PADDLE_WIDTH = 80;
+const PADDLE_HEIGHT = 15;
+const BALL_RADIUS = 8;
+const BRICK_ROWS = 12;  // 行数を10から12に増加
+const BRICK_COLUMNS = 8;  // 列数を6から8に増加
+const BRICK_WIDTH = 35;  // 幅を50から35に減少
+const BRICK_HEIGHT = 15;  // 高さを20から15に減少
+const BRICK_PADDING = 3;  // パディングを5から3に減少
+const BRICK_OFFSET_TOP = 40;  // 上部のオフセットを50から40に調整
+const BRICK_OFFSET_LEFT = (canvas.width - (BRICK_COLUMNS * (BRICK_WIDTH + BRICK_PADDING) - BRICK_PADDING)) / 2;  // 中央揃えに変更
 
 // 特殊ブロックの設定
 const BRICK_TYPES = {

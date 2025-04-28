@@ -8,61 +8,57 @@
     <title>ブロック崩しゲーム</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
             background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
             overflow: hidden;
         }
         #gameContainer {
             position: relative;
             width: 100%;
-            max-width: 800px;
-            height: 100vh;
-            max-height: 600px;
+            max-width: 360px;
+            aspect-ratio: 9/16;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        canvas {
-            border: 2px solid #333;
+        #gameCanvas {
             background-color: #fff;
-            width: 100%;
-            height: 100%;
-            display: block;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         #audioElements {
             display: none;
         }
         #startScreen {
             position: absolute;
-            text-align: center;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            z-index: 1;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            width: 80%;
-            max-width: 400px;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            box-sizing: border-box;
         }
         #startButton {
+            padding: 12px 30px;
+            font-size: 1.2em;
             background-color: #0095DD;
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 18px;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 20px;
             transition: background-color 0.3s;
-            width: 100%;
-            max-width: 200px;
         }
         #startButton:hover {
             background-color: #0077B5;
@@ -71,12 +67,14 @@
             color: #333;
             margin-bottom: 20px;
             font-size: 24px;
+            text-align: center;
         }
         .instructions {
             color: #666;
             margin-bottom: 20px;
             line-height: 1.5;
             font-size: 16px;
+            text-align: center;
         }
         @media (max-width: 600px) {
             h1 {
@@ -102,18 +100,23 @@
         }
         #highScores {
             margin-top: 20px;
-            padding: 10px;
+            padding: 15px;
             background-color: rgba(0, 0, 0, 0.05);
             border-radius: 5px;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
         }
         #highScores h2 {
             font-size: 18px;
             margin: 0 0 10px 0;
             color: #333;
+            text-align: center;
         }
         #highScoresList {
             font-size: 16px;
             color: #666;
+            text-align: center;
         }
         #highScoresList div {
             margin: 5px 0;
