@@ -200,15 +200,13 @@ function initGame() {
     // アイテムの配列を初期化
     items = [];
 
-    // タイムアタックモードの場合、タイマーをリセット
-    if (gameMode === 'timeAttack') {
-        gameTime = 0;
-        if (gameTimer) clearInterval(gameTimer);
-        gameTimer = setInterval(() => {
-            gameTime++;
-            updateTimer();
-        }, 1000);
-    }
+    // タイマーをリセット
+    gameTime = 0;
+    if (gameTimer) clearInterval(gameTimer);
+    gameTimer = setInterval(() => {
+        gameTime++;
+        updateTimer();
+    }, 1000);
 }
 
 // タイマーの更新
@@ -437,15 +435,11 @@ function draw() {
         if (gameTimer) clearInterval(gameTimer);
         gameClearSound.play();
         setTimeout(() => {
-            if (gameMode === 'timeAttack') {
-                const top3 = saveHighScore(gameTime);
-                const message = `おめでとう！クリアタイム: ${formatTime(gameTime)}\n\n` +
-                    `トップ3の記録:\n${top3.map((score, index) => 
-                        `${index + 1}位: ${formatTime(score)}`).join('\n')}`;
-                alert(message);
-            } else {
-                alert('おめでとう！ゲームクリア！');
-            }
+            const top3 = saveHighScore(gameTime);
+            const message = `おめでとう！クリアタイム: ${formatTime(gameTime)}\n\n` +
+                `トップ3の記録:\n${top3.map((score, index) => 
+                    `${index + 1}位: ${formatTime(score)}`).join('\n')}`;
+            alert(message);
             startScreen.style.display = 'block';
             showHighScores();
         }, 500);

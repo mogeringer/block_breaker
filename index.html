@@ -100,23 +100,6 @@
             padding: 10px;
             border-radius: 5px;
         }
-        .mode-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .mode-button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .mode-button.active {
-            background-color: #1976D2;
-        }
         #highScores {
             margin-top: 20px;
             padding: 10px;
@@ -143,16 +126,13 @@
         <div id="timer">00:00</div>
         <div id="startScreen">
             <h1>ブロック崩しゲーム</h1>
-            <div class="mode-buttons">
-                <button class="mode-button active" onclick="setGameMode('normal')">ノーマルモード</button>
-                <button class="mode-button" onclick="setGameMode('timeAttack')">タイムアタック</button>
-            </div>
             <div class="instructions">
                 <p>画面を左右にスワイプしてパドルを操作します</p>
                 <p>すべてのブロックを壊してクリアを目指しましょう！</p>
+                <p>より速いタイムでクリアを目指してください！</p>
             </div>
             <div id="highScores">
-                <h2>タイムアタック トップ3</h2>
+                <h2>トップ3の記録</h2>
                 <div id="highScoresList"></div>
             </div>
             <button id="startButton">ゲームスタート</button>
@@ -166,15 +146,6 @@
     </div>
     <script src="game.js"></script>
     <script>
-        // ゲームモードの設定
-        function setGameMode(mode) {
-            gameMode = mode;
-            document.querySelectorAll('.mode-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            document.querySelector(`.mode-button[onclick="setGameMode('${mode}')"]`).classList.add('active');
-        }
-
         // ページ読み込み時にハイスコアを表示
         window.addEventListener('load', () => {
             showHighScores();
