@@ -49,10 +49,44 @@ const BRICK_PADDING = 10;
 const BRICK_OFFSET_TOP = 50;
 const BRICK_OFFSET_LEFT = 30;
 
+// アイテムの設定
+const ITEM_RADIUS = 15;
+const ITEM_SPEED = 2;
+const ITEM_COLOR = '#FFD700'; // 金色
+
+// アイテムクラス
+class Item {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = ITEM_RADIUS;
+        this.speed = ITEM_SPEED;
+        this.type = 'extraBall'; // アイテムの種類
+        this.active = true;
+    }
+
+    update() {
+        this.y += this.speed;
+        if (this.y > canvas.height) {
+            this.active = false;
+        }
+    }
+
+    draw() {
+        if (!this.active) return;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = ITEM_COLOR;
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
 // ゲームオブジェクト
 let paddle;
-let ball;
+let balls = []; // ボールの配列
 let bricks;
+let items = []; // アイテムの配列
 let gameRunning = false;
 let touchStartX = 0;
 let touchCurrentX = 0;
@@ -96,13 +130,14 @@ function initGame() {
         dx: 8
     };
 
-    ball = {
+    // 最初のボールを追加
+    balls = [{
         x: canvas.width / 2,
         y: canvas.height - PADDLE_HEIGHT - BALL_RADIUS - 10,
         radius: BALL_RADIUS,
         dx: 4,
         dy: -4
-    };
+    }];
 
     // ブロックの配列
     bricks = [];
@@ -118,6 +153,22 @@ function initGame() {
             };
         }
     }
+
+    // アイテムの配列を初期化
+    items = [];
+}
+
+// 新しいボールを追加する関数
+function addBall() {
+    if (balls.length >= 10) return; // 最大10個まで
+    const newBall = {
+        x: paddle.x + paddle.width / 2,
+        y: paddle.y - BALL_RADIUS,
+        radius: BALL_RADIUS,
+        dx: (Math.random() - 0.5) * 8, // ランダムな方向
+        dy: -4
+    };
+    balls.push(newBall);
 }
 
 // スタートボタンのイベントリスナー
@@ -140,11 +191,19 @@ function draw() {
     ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
 
     // ボールの描画
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#0095DD';
-    ctx.fill();
-    ctx.closePath();
+    balls.forEach(ball => {
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#0095DD';
+        ctx.fill();
+        ctx.closePath();
+    });
+
+    // アイテムの描画と更新
+    items.forEach(item => {
+        item.update();
+        item.draw();
+    });
 
     // ブロックの描画
     for (let i = 0; i < BRICK_ROWS; i++) {
@@ -163,48 +222,84 @@ function draw() {
     if (paddle.x < 0) paddle.x = 0;
     if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
 
-    // ボールの移動
-    ball.x += ball.dx;
-    ball.y += ball.dy;
+    // ボールの移動と衝突判定
+    balls.forEach(ball => {
+        ball.x += ball.dx;
+        ball.y += ball.dy;
 
-    // 壁との衝突判定
-    if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
-        ball.dx = -ball.dx;
-    }
-    if (ball.y - ball.radius < 0) {
-        ball.dy = -ball.dy;
-    }
+        // 壁との衝突判定
+        if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+            ball.dx = -ball.dx;
+        }
+        if (ball.y - ball.radius < 0) {
+            ball.dy = -ball.dy;
+        }
 
-    // パドルとの衝突判定
-    if (ball.y + ball.radius > paddle.y && 
-        ball.y - ball.radius < paddle.y + paddle.height &&
-        ball.x + ball.radius > paddle.x && 
-        ball.x - ball.radius < paddle.x + paddle.width) {
-        ball.dy = -ball.dy;
-        paddleHitSound.currentTime = 0;
-        paddleHitSound.play();
-    }
+        // パドルとの衝突判定
+        if (ball.y + ball.radius > paddle.y && 
+            ball.y - ball.radius < paddle.y + paddle.height &&
+            ball.x + ball.radius > paddle.x && 
+            ball.x - ball.radius < paddle.x + paddle.width) {
+            ball.dy = -ball.dy;
+            paddleHitSound.currentTime = 0;
+            paddleHitSound.play();
+        }
+    });
 
     // ブロックとの衝突判定
     for (let i = 0; i < BRICK_ROWS; i++) {
         for (let j = 0; j < BRICK_COLUMNS; j++) {
             const brick = bricks[i][j];
             if (brick.visible) {
-                if (ball.x + ball.radius > brick.x && 
-                    ball.x - ball.radius < brick.x + brick.width &&
-                    ball.y + ball.radius > brick.y && 
-                    ball.y - ball.radius < brick.y + brick.height) {
-                    ball.dy = -ball.dy;
-                    brick.visible = false;
-                    brickBreakSound.currentTime = 0;
-                    brickBreakSound.play();
-                }
+                balls.forEach(ball => {
+                    if (ball.x + ball.radius > brick.x && 
+                        ball.x - ball.radius < brick.x + brick.width &&
+                        ball.y + ball.radius > brick.y && 
+                        ball.y - ball.radius < brick.y + brick.height) {
+                        ball.dy = -ball.dy;
+                        brick.visible = false;
+                        brickBreakSound.currentTime = 0;
+                        brickBreakSound.play();
+
+                        // アイテムをランダムに生成
+                        if (Math.random() < 0.3) { // 30%の確率でアイテムを生成
+                            const item = new Item(
+                                brick.x + brick.width / 2,
+                                brick.y + brick.height / 2
+                            );
+                            items.push(item);
+                        }
+                    }
+                });
             }
         }
     }
 
+    // アイテムとパドルの衝突判定
+    items = items.filter(item => {
+        if (item.active && 
+            item.y + item.radius > paddle.y && 
+            item.y - item.radius < paddle.y + paddle.height &&
+            item.x + item.radius > paddle.x && 
+            item.x - item.radius < paddle.x + paddle.width) {
+            // アイテムを取得
+            if (item.type === 'extraBall') {
+                addBall();
+            }
+            return false;
+        }
+        return true;
+    });
+
     // ゲームオーバー判定
-    if (ball.y + ball.radius > canvas.height) {
+    let allBallsLost = true;
+    balls.forEach(ball => {
+        if (ball.y + ball.radius <= canvas.height) {
+            allBallsLost = false;
+        }
+    });
+
+    if (allBallsLost) {
         gameRunning = false;
         gameOverSound.play();
         setTimeout(() => {
