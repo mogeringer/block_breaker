@@ -41,13 +41,13 @@ const gameClearSound = document.getElementById('gameClear');
 const PADDLE_WIDTH = 100;
 const PADDLE_HEIGHT = 20;
 const BALL_RADIUS = 10;
-const BRICK_ROWS = 5;
-const BRICK_COLUMNS = 8;
-const BRICK_WIDTH = 80;
-const BRICK_HEIGHT = 30;
-const BRICK_PADDING = 10;
-const BRICK_OFFSET_TOP = 50;
-const BRICK_OFFSET_LEFT = 30;
+const BRICK_ROWS = 8;
+const BRICK_COLUMNS = 12;
+const BRICK_WIDTH = 60;
+const BRICK_HEIGHT = 20;
+const BRICK_PADDING = 5;
+const BRICK_OFFSET_TOP = 30;
+const BRICK_OFFSET_LEFT = 20;
 
 // 特殊ブロックの設定
 const BRICK_TYPES = {
@@ -86,12 +86,6 @@ const ITEM_TYPES = {
         color: '#FF4500',
         border: '#8B0000',
         effect: 'ボールがブロックを貫通する'
-    },
-    PADDLE_MAGNET: {
-        name: '磁石パドル',
-        color: '#32CD32',
-        border: '#006400',
-        effect: 'パドルがボールを引き寄せる'
     },
     BALL_SPLIT: {
         name: 'ボール分裂',
@@ -230,7 +224,6 @@ let powerUps = {
     paddleSize: false,
     ballSlow: false,
     ballPierce: false,
-    paddleMagnet: false,
     ballSplit: false
 };
 
@@ -313,7 +306,6 @@ function initGame() {
         paddleSize: false,
         ballSlow: false,
         ballPierce: false,
-        paddleMagnet: false,
         ballSplit: false
     };
     powerUpTimers = {};
@@ -434,17 +426,6 @@ function draw() {
         ball.x += ball.dx * speedMultiplier;
         ball.y += ball.dy * speedMultiplier;
 
-        // 磁石パドルの効果
-        if (powerUps.paddleMagnet && ball.y > paddle.y - 100) {
-            const dx = (paddle.x + paddle.width / 2) - ball.x;
-            const dy = paddle.y - ball.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < 200) {
-                ball.x += dx * 0.02;
-                ball.y += dy * 0.02;
-            }
-        }
-
         // 壁との衝突判定
         if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
             ball.dx = -ball.dx;
@@ -543,9 +524,6 @@ function draw() {
                     break;
                 case 'BALL_PIERCE':
                     applyPowerUp('ballPierce');
-                    break;
-                case 'PADDLE_MAGNET':
-                    applyPowerUp('paddleMagnet');
                     break;
                 case 'BALL_SPLIT':
                     applyPowerUp('ballSplit');
