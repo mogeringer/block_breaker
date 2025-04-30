@@ -326,7 +326,7 @@ function initGameObjects() {
     // パドルの初期化
     paddle = {
         x: canvas.width / 2 - currentStage.paddleWidth / 2,
-        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - 20, // 20px上部に移動
+        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - 50, // 50px上部に移動
         width: currentStage.paddleWidth,
         height: GAME_CONFIG.PADDLE.HEIGHT,
         dx: GAME_CONFIG.PADDLE.SPEED
