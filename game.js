@@ -729,14 +729,12 @@ function destroyBrick(brick, row, col) {
         handleExplosiveBrick(row, col);
     }
 
-    // アイテムの生成
-    if (Math.random() < 0.1) {
-        const item = generateRandomItem(
-            brick.x + brick.width / 2,
-            brick.y + brick.height / 2
-        );
-        if (item) items.push(item);
-    }
+    // アイテムの生成（確率を100%に変更）
+    const item = generateRandomItem(
+        brick.x + brick.width / 2,
+        brick.y + brick.height / 2
+    );
+    if (item) items.push(item);
 }
 
 // 爆発ブロックの処理
