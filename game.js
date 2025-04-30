@@ -158,27 +158,27 @@ const GAME_CONFIG = {
         { // ステージ1（簡単）
             paddleWidth: 100,
             ballSpeed: 4,
-            itemDropRate: 0.4
+            itemDropRate: 0.2
         },
         { // ステージ2
             paddleWidth: 90,
             ballSpeed: 5,
-            itemDropRate: 0.3
+            itemDropRate: 0.15
         },
         { // ステージ3
             paddleWidth: 80,
             ballSpeed: 6,
-            itemDropRate: 0.2
+            itemDropRate: 0.1
         },
         { // ステージ4
             paddleWidth: 70,
             ballSpeed: 7,
-            itemDropRate: 0.1
+            itemDropRate: 0.05
         },
         { // ステージ5
             paddleWidth: 60,
             ballSpeed: 8,
-            itemDropRate: 0.05
+            itemDropRate: 0.025
         }
     ]
 };
