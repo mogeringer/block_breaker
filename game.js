@@ -325,8 +325,8 @@ function initGameObjects() {
     
     // パドルの初期化
     paddle = {
-        x: canvas.width / 2 - currentStage.paddleWidth / 2,
-        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - 50, // 50px上部に移動
+        x: 0,  // キャンバスの一番左に配置
+        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - 50,
         width: currentStage.paddleWidth,
         height: GAME_CONFIG.PADDLE.HEIGHT,
         dx: GAME_CONFIG.PADDLE.SPEED
@@ -335,7 +335,7 @@ function initGameObjects() {
     // ボールの初期化
     balls = [{
         x: canvas.width / 2,
-        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - GAME_CONFIG.BALL.RADIUS - 20, // パドルに合わせて調整
+        y: canvas.height - GAME_CONFIG.PADDLE.HEIGHT - GAME_CONFIG.BALL.RADIUS - 60, // 60px上部に移動
         radius: GAME_CONFIG.BALL.RADIUS,
         dx: currentStage.ballSpeed,
         dy: -currentStage.ballSpeed
