@@ -568,10 +568,14 @@ function checkCollision(ball, object) {
 
 // パドルとの衝突判定を改善
 function handlePaddleCollision(ball) {
-    const ballRight = ball.x + ball.radius;
-    const ballLeft = ball.x - ball.radius;
-    const ballBottom = ball.y + ball.radius;
-    const ballTop = ball.y - ball.radius;
+    // 次のフレームでのボールの位置を予測
+    const nextX = ball.x + ball.dx;
+    const nextY = ball.y + ball.dy;
+    
+    const ballRight = nextX + ball.radius;
+    const ballLeft = nextX - ball.radius;
+    const ballBottom = nextY + ball.radius;
+    const ballTop = nextY - ball.radius;
 
     const paddleRight = paddle.x + paddle.width;
     const paddleLeft = paddle.x;
@@ -582,12 +586,12 @@ function handlePaddleCollision(ball) {
     if (ballRight > paddleLeft && ballLeft < paddleRight) {
         // 上からの衝突
         if (ballBottom > paddleTop && ballTop < paddleTop) {
-            ball.dy = -ball.dy;
+            ball.dy = -Math.abs(ball.dy); // 必ず下向きに反射
             return true;
         }
         // 下からの衝突
         if (ballTop < paddleBottom && ballBottom > paddleBottom) {
-            ball.dy = -ball.dy;
+            ball.dy = Math.abs(ball.dy); // 必ず上向きに反射
             return true;
         }
     }
@@ -596,12 +600,12 @@ function handlePaddleCollision(ball) {
     if (ballBottom > paddleTop && ballTop < paddleBottom) {
         // 左からの衝突
         if (ballRight > paddleLeft && ballLeft < paddleLeft) {
-            ball.dx = -ball.dx;
+            ball.dx = Math.abs(ball.dx); // 必ず右向きに反射
             return true;
         }
         // 右からの衝突
         if (ballLeft < paddleRight && ballRight > paddleRight) {
-            ball.dx = -ball.dx;
+            ball.dx = -Math.abs(ball.dx); // 必ず左向きに反射
             return true;
         }
     }
@@ -722,6 +726,14 @@ function updateBalls() {
     balls.forEach(ball => {
         // ボールの速度を調整
         const speedMultiplier = GameState.powerUps.ballSlow ? GAME_CONFIG.BALL.POWER_UP_SLOW_MULTIPLIER : 1.0;
+        
+        // 衝突判定を先に行う
+        if (handlePaddleCollision(ball)) {
+            paddleHitSound.currentTime = 0;
+            paddleHitSound.play();
+        }
+
+        // 位置の更新
         ball.x += ball.dx * speedMultiplier;
         ball.y += ball.dy * speedMultiplier;
 
@@ -731,12 +743,6 @@ function updateBalls() {
         }
         if (ball.y - ball.radius < 0) {
             ball.dy = -ball.dy;
-        }
-
-        // パドルとの衝突判定
-        if (handlePaddleCollision(ball)) {
-            paddleHitSound.currentTime = 0;
-            paddleHitSound.play();
         }
     });
 }
