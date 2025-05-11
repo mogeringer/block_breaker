@@ -547,10 +547,66 @@ function addTenBalls() {
 
 // 衝突判定のユーティリティ関数
 function checkCollision(ball, object) {
-    return ball.x + ball.radius > object.x &&
-           ball.x - ball.radius < object.x + object.width &&
-           ball.y + ball.radius > object.y &&
-           ball.y - ball.radius < object.y + object.height;
+    // ボールとオブジェクトの衝突判定
+    const ballRight = ball.x + ball.radius;
+    const ballLeft = ball.x - ball.radius;
+    const ballBottom = ball.y + ball.radius;
+    const ballTop = ball.y - ball.radius;
+
+    const objectRight = object.x + object.width;
+    const objectLeft = object.x;
+    const objectBottom = object.y + object.height;
+    const objectTop = object.y;
+
+    // 横方向の衝突判定
+    const horizontalCollision = ballRight > objectLeft && ballLeft < objectRight;
+    // 縦方向の衝突判定
+    const verticalCollision = ballBottom > objectTop && ballTop < objectBottom;
+
+    return horizontalCollision && verticalCollision;
+}
+
+// パドルとの衝突判定を改善
+function handlePaddleCollision(ball) {
+    const ballRight = ball.x + ball.radius;
+    const ballLeft = ball.x - ball.radius;
+    const ballBottom = ball.y + ball.radius;
+    const ballTop = ball.y - ball.radius;
+
+    const paddleRight = paddle.x + paddle.width;
+    const paddleLeft = paddle.x;
+    const paddleBottom = paddle.y + paddle.height;
+    const paddleTop = paddle.y;
+
+    // 横方向の衝突
+    if (ballRight > paddleLeft && ballLeft < paddleRight) {
+        // 上からの衝突
+        if (ballBottom > paddleTop && ballTop < paddleTop) {
+            ball.dy = -ball.dy;
+            return true;
+        }
+        // 下からの衝突
+        if (ballTop < paddleBottom && ballBottom > paddleBottom) {
+            ball.dy = -ball.dy;
+            return true;
+        }
+    }
+
+    // 縦方向の衝突
+    if (ballBottom > paddleTop && ballTop < paddleBottom) {
+        // 左からの衝突
+        if (ballRight > paddleLeft && ballLeft < paddleLeft) {
+            ball.dx = -ball.dx;
+            return true;
+        }
+        // 右からの衝突
+        if (ballLeft < paddleRight && ballRight > paddleRight) {
+            ball.dx = -ball.dx;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // ブロックの描画
@@ -678,8 +734,7 @@ function updateBalls() {
         }
 
         // パドルとの衝突判定
-        if (checkCollision(ball, paddle)) {
-            ball.dy = -ball.dy;
+        if (handlePaddleCollision(ball)) {
             paddleHitSound.currentTime = 0;
             paddleHitSound.play();
         }
