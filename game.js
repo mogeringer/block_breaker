@@ -242,13 +242,22 @@ let touchCurrentX = 0;
 
 // ハイスコアの管理
 function saveHighScore(stage) {
+    // 現在のステージを記録（クリアしたステージは現在のステージ-1）
     const clearedStage = stage - 1;
-    if (clearedStage <= 0) return getHighScores(); // 0以下は記録せず、既存の記録を返す
     const highScores = JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
-    highScores.push(clearedStage);
-    highScores.sort((a, b) => b - a);
-    const top3 = highScores.slice(0, 3);
+    
+    // 新しい記録を追加（0以上の場合のみ）
+    if (clearedStage >= 0) {
+        highScores.push(clearedStage);
+    }
+    
+    // 重複を除去し、降順にソート
+    const uniqueScores = [...new Set(highScores)].sort((a, b) => b - a);
+    
+    // トップ3を保存
+    const top3 = uniqueScores.slice(0, 3);
     localStorage.setItem('blockBreakerHighScores', JSON.stringify(top3));
+    
     return top3;
 }
 
@@ -256,17 +265,19 @@ function getHighScores() {
     return JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
 }
 
+// ハイスコアのリセット
 function resetHighScores() {
     localStorage.removeItem('blockBreakerHighScores');
-    showHighScores();
+    showHighScores(); // 表示を更新
 }
 
+// ハイスコアの表示
 function showHighScores() {
     const highScores = getHighScores();
     const highScoresList = document.getElementById('highScoresList');
     if (highScoresList) {
-        highScoresList.innerHTML = highScores.length > 0
-            ? highScores.map((score, index) =>
+        highScoresList.innerHTML = highScores.length > 0 
+            ? highScores.map((score, index) => 
                 `<div>${index + 1}位: ステージ${score}</div>`).join('')
             : '<div>記録なし</div>';
     }
@@ -469,7 +480,7 @@ function generateRandomItem(x, y) {
 // ゲームの初期化
 function initGame() {
     GameState.reset();
-    resetHighScores();
+    resetHighScores(); // ゲーム開始時にハイスコアをリセット
     resizeCanvas();
     initGameObjects();
     updateStageDisplay();
@@ -483,7 +494,7 @@ function handleGameOver() {
     setTimeout(() => {
         const top3 = saveHighScore(GameState.stage);
         const message = `ゲームオーバー！\n到達ステージ: ${GameState.stage}\n\n` +
-            `トップ3の記録:\n${top3.map((score, index) =>
+            `トップ3の記録:\n${top3.map((score, index) => 
                 `${index + 1}位: ステージ${score}`).join('\n')}`;
         alert(message);
         showStartScreen();
@@ -497,6 +508,7 @@ function handleGameClear() {
     setTimeout(() => {
         if (GameState.stage < GAME_CONFIG.STAGES.length) {
             advanceStage();
+            // ゲームオブジェクトの初期化を待ってからrunningをtrueに設定
             setTimeout(() => {
                 GameState.running = true;
                 draw();
@@ -504,7 +516,7 @@ function handleGameClear() {
         } else {
             const top3 = saveHighScore(GameState.stage);
             const message = `おめでとう！全ステージクリア！\n到達ステージ: ${GameState.stage}\n\n` +
-                `トップ3の記録:\n${top3.map((score, index) =>
+                `トップ3の記録:\n${top3.map((score, index) => 
                     `${index + 1}位: ステージ${score}`).join('\n')}`;
             alert(message);
             showStartScreen();
