@@ -244,6 +244,8 @@ let touchCurrentX = 0;
 function saveHighScore(stage) {
     // 現在のステージを記録（クリアしたステージは現在のステージ-1）
     const clearedStage = stage - 1;
+    
+    // 既存のハイスコアを取得
     const highScores = JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
     
     // 新しい記録を追加（0以上の場合のみ）
@@ -480,7 +482,6 @@ function generateRandomItem(x, y) {
 // ゲームの初期化
 function initGame() {
     GameState.reset();
-    resetHighScores(); // ゲーム開始時にハイスコアをリセット
     resizeCanvas();
     initGameObjects();
     updateStageDisplay();
