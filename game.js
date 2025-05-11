@@ -724,9 +724,6 @@ function updatePaddlePosition() {
 // ボールの更新
 function updateBalls() {
     balls.forEach(ball => {
-        // ボールの速度を調整
-        const speedMultiplier = GameState.powerUps.ballSlow ? GAME_CONFIG.BALL.POWER_UP_SLOW_MULTIPLIER : 1.0;
-        
         // 衝突判定を先に行う
         if (handlePaddleCollision(ball)) {
             paddleHitSound.currentTime = 0;
@@ -734,8 +731,8 @@ function updateBalls() {
         }
 
         // 位置の更新
-        ball.x += ball.dx * speedMultiplier;
-        ball.y += ball.dy * speedMultiplier;
+        ball.x += ball.dx;
+        ball.y += ball.dy;
 
         // 壁との衝突判定
         if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
