@@ -535,9 +535,14 @@ function updateBalls() {
             paddleHitSound.play();
         }
 
+        // 速度の更新（SLOWアイテムの効果を適用）
+        const speedMultiplier = GameState.powerUps.ballSlow ? GAME_CONFIG.BALL.POWER_UP_SLOW_MULTIPLIER : 1.0;
+        const dx = ball.dx * speedMultiplier;
+        const dy = ball.dy * speedMultiplier;
+
         // 位置の更新
-        ball.x += ball.dx;
-        ball.y += ball.dy;
+        ball.x += dx;
+        ball.y += dy;
 
         // 壁との衝突判定
         if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
