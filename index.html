@@ -88,39 +88,6 @@
                 font-size: 16px;
             }
         }
-        #timer {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 24px;
-            color: #333;
-            background-color: rgba(255, 255, 255, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-        }
-        #highScores {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: rgba(0, 0, 0, 0.05);
-            border-radius: 5px;
-            width: 100%;
-            max-width: 300px;
-            box-sizing: border-box;
-        }
-        #highScores h2 {
-            font-size: 18px;
-            margin: 0 0 10px 0;
-            color: #333;
-            text-align: center;
-        }
-        #highScoresList {
-            font-size: 16px;
-            color: #666;
-            text-align: center;
-        }
-        #highScoresList div {
-            margin: 5px 0;
-        }
         #stageDisplay {
             position: absolute;
             top: 20px;
@@ -136,14 +103,12 @@
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
-        <div id="timer">00:00</div>
         <div id="stageDisplay">ステージ 1</div>
         <div id="startScreen">
             <h1>ブロック崩しゲーム</h1>
             <div class="instructions">
                 <p>画面を左右にスワイプしてパドルを操作します</p>
                 <p>すべてのブロックを壊してクリアを目指しましょう！</p>
-                <p>より速いタイムでクリアを目指してください！</p>
             </div>
             <div id="highScores">
                 <h2>トップ3の記録</h2>
