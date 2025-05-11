@@ -187,8 +187,6 @@ const GAME_CONFIG = {
 const GameState = {
     running: false,
     mode: 'normal',
-    time: 0,
-    timer: null,
     stage: 1,
     powerUps: {
         paddleSize: false,
@@ -199,10 +197,7 @@ const GameState = {
     reset() {
         this.running = false;
         this.mode = 'normal';
-        this.time = 0;
         this.stage = 1;
-        if (this.timer) clearInterval(this.timer);
-        this.timer = null;
         this.powerUps = {
             paddleSize: false,
             ballSlow: false,
@@ -221,10 +216,10 @@ let touchStartX = 0;
 let touchCurrentX = 0;
 
 // ハイスコアの管理
-function saveHighScore(time) {
+function saveHighScore(stage) {
     const highScores = JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
-    highScores.push(time);
-    highScores.sort((a, b) => a - b);
+    highScores.push(stage);
+    highScores.sort((a, b) => b - a); // 降順
     const top3 = highScores.slice(0, 3);
     localStorage.setItem('blockBreakerHighScores', JSON.stringify(top3));
     return top3;
@@ -234,16 +229,20 @@ function getHighScores() {
     return JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
 }
 
-// ハイスコアのリセット
 function resetHighScores() {
     localStorage.removeItem('blockBreakerHighScores');
-    showHighScores(); // 表示を更新
+    showHighScores();
 }
 
-function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+function showHighScores() {
+    const highScores = getHighScores();
+    const highScoresList = document.getElementById('highScoresList');
+    if (highScoresList) {
+        highScoresList.innerHTML = highScores.length > 0
+            ? highScores.map((score, index) =>
+                `<div>${index + 1}位: ステージ${score}</div>`).join('')
+            : '<div>記録なし</div>';
+    }
 }
 
 // タッチイベントの処理
@@ -443,29 +442,23 @@ function generateRandomItem(x, y) {
 // ゲームの初期化
 function initGame() {
     GameState.reset();
-    resetHighScores(); // ゲーム開始時にハイスコアをリセット
+    resetHighScores();
     resizeCanvas();
     initGameObjects();
-    startGameTimer();
     updateStageDisplay();
     GameState.running = true;
-}
-
-// ゲームタイマーの開始
-function startGameTimer() {
-    GameState.timer = setInterval(() => {
-        GameState.time++;
-        updateTimer();
-    }, 1000);
 }
 
 // ゲームオーバー処理
 function handleGameOver() {
     GameState.running = false;
-    if (GameState.timer) clearInterval(GameState.timer);
     gameOverSound.play();
     setTimeout(() => {
-        alert('ゲームオーバー！');
+        const top3 = saveHighScore(GameState.stage);
+        const message = `ゲームオーバー！\n到達ステージ: ${GameState.stage}\n\n` +
+            `トップ3の記録:\n${top3.map((score, index) =>
+                `${index + 1}位: ステージ${score}`).join('\n')}`;
+        alert(message);
         showStartScreen();
     }, GAME_CONFIG.GAME.GAME_OVER_DELAY);
 }
@@ -473,21 +466,19 @@ function handleGameOver() {
 // ゲームクリア処理
 function handleGameClear() {
     GameState.running = false;
-    if (GameState.timer) clearInterval(GameState.timer);
     gameClearSound.play();
     setTimeout(() => {
         if (GameState.stage < GAME_CONFIG.STAGES.length) {
             advanceStage();
-            // ゲームオブジェクトの初期化を待ってからrunningをtrueに設定
             setTimeout(() => {
                 GameState.running = true;
                 draw();
             }, 0);
         } else {
-            const top3 = saveHighScore(GameState.time);
-            const message = `おめでとう！全ステージクリア！\nクリアタイム: ${formatTime(GameState.time)}\n\n` +
-                `トップ3の記録:\n${top3.map((score, index) => 
-                    `${index + 1}位: ${formatTime(score)}`).join('\n')}`;
+            const top3 = saveHighScore(GameState.stage);
+            const message = `おめでとう！全ステージクリア！\n到達ステージ: ${GameState.stage}\n\n` +
+                `トップ3の記録:\n${top3.map((score, index) =>
+                    `${index + 1}位: ステージ${score}`).join('\n')}`;
             alert(message);
             showStartScreen();
         }
@@ -501,116 +492,34 @@ function showStartScreen() {
     showHighScores();
 }
 
-// タイマーの更新
-function updateTimer() {
-    document.getElementById('timer').textContent = formatTime(GameState.time);
+// パドルの位置更新
+function updatePaddlePosition() {
+    paddle.x = mouseX - paddle.width / 2;
+    if (paddle.x < 0) paddle.x = 0;
+    if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
 }
 
-// ハイスコアの表示
-function showHighScores() {
-    const highScores = getHighScores();
-    const highScoresList = document.getElementById('highScoresList');
-    if (highScoresList) {
-        highScoresList.innerHTML = highScores.length > 0 
-            ? highScores.map((score, index) => 
-                `<div>${index + 1}位: ${formatTime(score)}</div>`).join('')
-            : '<div>記録なし</div>';
-    }
-}
-
-// 新しいボールを追加する関数
-function addBall() {
-    const newBall = {
-        x: paddle.x + paddle.width / 2,
-        y: paddle.y - GAME_CONFIG.BALL.RADIUS,
-        radius: GAME_CONFIG.BALL.RADIUS,
-        dx: (Math.random() - 0.5) * 8, // ランダムな方向
-        dy: -4
-    };
-    // 速度の最小値を設定
-    const minSpeed = 3;
-    const speed = Math.sqrt(newBall.dx * newBall.dx + newBall.dy * newBall.dy);
-    if (speed < minSpeed) {
-        const ratio = minSpeed / speed;
-        newBall.dx *= ratio;
-        newBall.dy *= ratio;
-    }
-    balls.push(newBall);
-}
-
-// 10個のボールを一度に追加する関数
-function addTenBalls() {
-    for (let i = 0; i < 10; i++) {
-        addBall();
-    }
-}
-
-// 衝突判定のユーティリティ関数
-function checkCollision(ball, object) {
-    // ボールとオブジェクトの衝突判定
-    const ballRight = ball.x + ball.radius;
-    const ballLeft = ball.x - ball.radius;
-    const ballBottom = ball.y + ball.radius;
-    const ballTop = ball.y - ball.radius;
-
-    const objectRight = object.x + object.width;
-    const objectLeft = object.x;
-    const objectBottom = object.y + object.height;
-    const objectTop = object.y;
-
-    // 横方向の衝突判定
-    const horizontalCollision = ballRight > objectLeft && ballLeft < objectRight;
-    // 縦方向の衝突判定
-    const verticalCollision = ballBottom > objectTop && ballTop < objectBottom;
-
-    return horizontalCollision && verticalCollision;
-}
-
-// パドルとの衝突判定を改善
-function handlePaddleCollision(ball) {
-    // 次のフレームでのボールの位置を予測
-    const nextX = ball.x + ball.dx;
-    const nextY = ball.y + ball.dy;
-    
-    const ballRight = nextX + ball.radius;
-    const ballLeft = nextX - ball.radius;
-    const ballBottom = nextY + ball.radius;
-    const ballTop = nextY - ball.radius;
-
-    const paddleRight = paddle.x + paddle.width;
-    const paddleLeft = paddle.x;
-    const paddleBottom = paddle.y + paddle.height;
-    const paddleTop = paddle.y;
-
-    // 横方向の衝突
-    if (ballRight > paddleLeft && ballLeft < paddleRight) {
-        // 上からの衝突
-        if (ballBottom > paddleTop && ballTop < paddleTop) {
-            ball.dy = -Math.abs(ball.dy); // 必ず下向きに反射
-            return true;
+// ボールの更新
+function updateBalls() {
+    balls.forEach(ball => {
+        // 衝突判定を先に行う
+        if (handlePaddleCollision(ball)) {
+            paddleHitSound.currentTime = 0;
+            paddleHitSound.play();
         }
-        // 下からの衝突
-        if (ballTop < paddleBottom && ballBottom > paddleBottom) {
-            ball.dy = Math.abs(ball.dy); // 必ず上向きに反射
-            return true;
-        }
-    }
 
-    // 縦方向の衝突
-    if (ballBottom > paddleTop && ballTop < paddleBottom) {
-        // 左からの衝突
-        if (ballRight > paddleLeft && ballLeft < paddleLeft) {
-            ball.dx = Math.abs(ball.dx); // 必ず右向きに反射
-            return true;
-        }
-        // 右からの衝突
-        if (ballLeft < paddleRight && ballRight > paddleRight) {
-            ball.dx = -Math.abs(ball.dx); // 必ず左向きに反射
-            return true;
-        }
-    }
+        // 位置の更新
+        ball.x += ball.dx;
+        ball.y += ball.dy;
 
-    return false;
+        // 壁との衝突判定
+        if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+            ball.dx = -ball.dx;
+        }
+        if (ball.y - ball.radius < 0) {
+            ball.dy = -ball.dy;
+        }
+    });
 }
 
 // ブロックの描画
@@ -714,34 +623,51 @@ function updateMovingBrick(brick) {
     }
 }
 
-// パドルの位置更新
-function updatePaddlePosition() {
-    paddle.x = mouseX - paddle.width / 2;
-    if (paddle.x < 0) paddle.x = 0;
-    if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
-}
+// パドルとの衝突判定を改善
+function handlePaddleCollision(ball) {
+    // 次のフレームでのボールの位置を予測
+    const nextX = ball.x + ball.dx;
+    const nextY = ball.y + ball.dy;
+    
+    const ballRight = nextX + ball.radius;
+    const ballLeft = nextX - ball.radius;
+    const ballBottom = nextY + ball.radius;
+    const ballTop = nextY - ball.radius;
 
-// ボールの更新
-function updateBalls() {
-    balls.forEach(ball => {
-        // 衝突判定を先に行う
-        if (handlePaddleCollision(ball)) {
-            paddleHitSound.currentTime = 0;
-            paddleHitSound.play();
-        }
+    const paddleRight = paddle.x + paddle.width;
+    const paddleLeft = paddle.x;
+    const paddleBottom = paddle.y + paddle.height;
+    const paddleTop = paddle.y;
 
-        // 位置の更新
-        ball.x += ball.dx;
-        ball.y += ball.dy;
+    // 横方向の衝突
+    if (ballRight > paddleLeft && ballLeft < paddleRight) {
+        // 上からの衝突
+        if (ballBottom > paddleTop && ballTop < paddleTop) {
+            ball.dy = -Math.abs(ball.dy); // 必ず下向きに反射
+            return true;
+        }
+        // 下からの衝突
+        if (ballTop < paddleBottom && ballBottom > paddleBottom) {
+            ball.dy = Math.abs(ball.dy); // 必ず上向きに反射
+            return true;
+        }
+    }
 
-        // 壁との衝突判定
-        if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
-            ball.dx = -ball.dx;
+    // 縦方向の衝突
+    if (ballBottom > paddleTop && ballTop < paddleBottom) {
+        // 左からの衝突
+        if (ballRight > paddleLeft && ballLeft < paddleLeft) {
+            ball.dx = Math.abs(ball.dx); // 必ず右向きに反射
+            return true;
         }
-        if (ball.y - ball.radius < 0) {
-            ball.dy = -ball.dy;
+        // 右からの衝突
+        if (ballLeft < paddleRight && ballRight > paddleRight) {
+            ball.dx = -Math.abs(ball.dx); // 必ず左向きに反射
+            return true;
         }
-    });
+    }
+
+    return false;
 }
 
 // ブロックとの衝突判定
@@ -849,6 +775,54 @@ function isGameClear() {
         }
     }
     return true;
+}
+
+// 新しいボールを追加する関数
+function addBall() {
+    const newBall = {
+        x: paddle.x + paddle.width / 2,
+        y: paddle.y - GAME_CONFIG.BALL.RADIUS,
+        radius: GAME_CONFIG.BALL.RADIUS,
+        dx: (Math.random() - 0.5) * 8, // ランダムな方向
+        dy: -4
+    };
+    // 速度の最小値を設定
+    const minSpeed = 3;
+    const speed = Math.sqrt(newBall.dx * newBall.dx + newBall.dy * newBall.dy);
+    if (speed < minSpeed) {
+        const ratio = minSpeed / speed;
+        newBall.dx *= ratio;
+        newBall.dy *= ratio;
+    }
+    balls.push(newBall);
+}
+
+// 10個のボールを一度に追加する関数
+function addTenBalls() {
+    for (let i = 0; i < 10; i++) {
+        addBall();
+    }
+}
+
+// 衝突判定のユーティリティ関数
+function checkCollision(ball, object) {
+    // ボールとオブジェクトの衝突判定
+    const ballRight = ball.x + ball.radius;
+    const ballLeft = ball.x - ball.radius;
+    const ballBottom = ball.y + ball.radius;
+    const ballTop = ball.y - ball.radius;
+
+    const objectRight = object.x + object.width;
+    const objectLeft = object.x;
+    const objectBottom = object.y + object.height;
+    const objectTop = object.y;
+
+    // 横方向の衝突判定
+    const horizontalCollision = ballRight > objectLeft && ballLeft < objectRight;
+    // 縦方向の衝突判定
+    const verticalCollision = ballBottom > objectTop && ballTop < objectBottom;
+
+    return horizontalCollision && verticalCollision;
 }
 
 // スタートボタンのイベントリスナー
