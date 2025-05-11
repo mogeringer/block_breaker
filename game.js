@@ -161,24 +161,49 @@ const GAME_CONFIG = {
             itemDropRate: 0.2
         },
         { // ステージ2
+            paddleWidth: 95,
+            ballSpeed: 4.5,
+            itemDropRate: 0.18
+        },
+        { // ステージ3
             paddleWidth: 90,
             ballSpeed: 5,
             itemDropRate: 0.15
         },
-        { // ステージ3
+        { // ステージ4
+            paddleWidth: 85,
+            ballSpeed: 5.5,
+            itemDropRate: 0.12
+        },
+        { // ステージ5
             paddleWidth: 80,
             ballSpeed: 6,
             itemDropRate: 0.1
         },
-        { // ステージ4
-            paddleWidth: 70,
-            ballSpeed: 7,
-            itemDropRate: 0.05
+        { // ステージ6
+            paddleWidth: 75,
+            ballSpeed: 6.5,
+            itemDropRate: 0.08
         },
-        { // ステージ5
+        { // ステージ7（旧ステージ5の難易度）
             paddleWidth: 60,
             ballSpeed: 8,
             itemDropRate: 0.025
+        },
+        { // ステージ8（より難しい）
+            paddleWidth: 55,
+            ballSpeed: 9,
+            itemDropRate: 0.02
+        },
+        { // ステージ9（さらに難しい）
+            paddleWidth: 50,
+            ballSpeed: 10,
+            itemDropRate: 0.015
+        },
+        { // ステージ10（最難関）
+            paddleWidth: 45,
+            ballSpeed: 12,
+            itemDropRate: 0.01
         }
     ]
 };
@@ -217,9 +242,11 @@ let touchCurrentX = 0;
 
 // ハイスコアの管理
 function saveHighScore(stage) {
+    const clearedStage = stage - 1;
+    if (clearedStage <= 0) return getHighScores(); // 0以下は記録せず、既存の記録を返す
     const highScores = JSON.parse(localStorage.getItem('blockBreakerHighScores') || '[]');
-    highScores.push(stage);
-    highScores.sort((a, b) => b - a); // 降順
+    highScores.push(clearedStage);
+    highScores.sort((a, b) => b - a);
     const top3 = highScores.slice(0, 3);
     localStorage.setItem('blockBreakerHighScores', JSON.stringify(top3));
     return top3;
